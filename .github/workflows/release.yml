@@ -17,8 +17,10 @@ jobs:
       keyboard: ${{ matrix.keyboard }}
       keymap: ${{ matrix.keymap }}
       side: ${{ matrix.side }}
+      POINTING_DEVICE_DRIVER: ${{ matrix.POINTING_DEVICE_DRIVER}}
     strategy:
       matrix:
-        keyboard: [ svalboard/trackpoint, svalboard, svalboard/trackball ]
+        keyboard: [ svalboard/trackpoint, svalboard, svalboard/trackball, svalboard/trackball ]
         keymap: [ vial ]
         side: [ left, right ]
+        POINTING_DEVICE_DRIVER: [ null, null, pmw3360, pmw3389 ]

@@ -12,6 +12,9 @@ on:
       side:
         required: true
         type: string
+      POINTING_DEVICE_DRIVER:
+        required: false
+        type: string
 
 jobs:
   build:

@@ -14,6 +14,16 @@ KEY_OVERRIDE_ENABLE ?= yes
 SRC += $(QUANTUM_DIR)/vial.c
 OPT_DEFS += -DVIAL_ENABLE -DNO_DEBUG -DSERIAL_NUMBER=\"vial:f64c2b3c$(SERIAL_SUFFIX)\"
 
+# Add your parameters here
+ifeq ($(strip $(pmw3360)), yes)
+    OPT_DEFS += -DPOINTING_DEVICE_IS_PMW3360
+endif
+
+ifeq ($(strip $(pmw3389)), yes)
+    OPT_DEFS += -DPOINTING_DEVICE_IS_PMW3389
+endif
+
+
 ifeq ($(strip $(VIAL_INSECURE)), yes)
     OPT_DEFS += -DVIAL_INSECURE
 endif
