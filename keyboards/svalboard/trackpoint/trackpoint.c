@@ -67,11 +67,14 @@ E2 81 92 XX - Set the deadzone - 0x0C default, claimed.
 Increase this to get rid of the tail drift.
 
 */
-//  PS2_MOUSE_SEND(0xE2, "pts: 0xE2");
-//  PS2_MOUSE_SEND(0x81, "pts: 0x81");
-//  PS2_MOUSE_SEND(0x92, "pts: 0x92");
-//  PS2_MOUSE_SEND(0x80, "pts: 0x0C");  // Experiment with this if it isn't enough.
+ PS2_MOUSE_SEND(0xE2, "pts: 0xE2");
+ PS2_MOUSE_SEND(0x81, "pts: 0x81");
+ PS2_MOUSE_SEND(0x92, "pts: 0x92");
+ PS2_MOUSE_SEND(0x15, "pts: 0x15");  // Experiment with this if it isn't enough.
 
+//claussen thinks 15 is a noticable yet not problematic improvement over stock 0C
+// anyone experiencing microdrift should titrate from here.
+// ideally we get it as low as possible while still eliminating the problem.
 /*
 
 Timing on the double tap on the trackpoint:
