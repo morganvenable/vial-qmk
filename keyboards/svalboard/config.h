@@ -43,7 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_COL_PUSHED_STATES { 0, 0, 1, 0, 0, 0 }
 #define DOUBLEDOWN_COL 5 // need a pullup on COL6
 #define PREWAIT_US 90
-#define POSTWAIT_US 90
+#define POSTWAIT_US 130
 
 #define SERIAL_DEBUG
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET
