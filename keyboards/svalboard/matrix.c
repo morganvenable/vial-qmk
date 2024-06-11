@@ -139,7 +139,7 @@ void matrix_init_custom(void) {
         pin_t pin = col_pins[col];
         if (pin != NO_PIN) {
             if (col == DOUBLEDOWN_COL){
-                setPinInputHigh(pin);
+                setPinInput(pin);  //OPAMP_DD
             } else {
                 setPinInput(pin);
             }
