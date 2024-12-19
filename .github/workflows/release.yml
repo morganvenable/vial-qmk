@@ -20,8 +20,8 @@ jobs:
 
     strategy:
       matrix:
-        keyboard: [ svalboard/trackpoint, svalboard, svalboard/trackball/pmw3360, svalboard/trackball/pmw3389 ]
-        keymap: [ vial ]
+        keyboard: [ svalboard/trackpoint, svalboard, svalboard/trackball/pmw3360, svalboard/trackball/pmw3389, svalboard/azoteq ]
+        keymap: [ vial, 6key ]
         side: [ left, right ]
 
   build_blank:
