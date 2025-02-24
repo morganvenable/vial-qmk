@@ -2,6 +2,33 @@
 #include "eeconfig.h"
 #include "version.h"
 #include "split_common/transactions.h"
+#include "gpio.h"
+#include "wait.h"
+
+#if defined(INIT_EE_HANDS_RIGHT) && defined(EE_HANDS)
+// GP3 pin will be used to detect handedness with internal pullup
+// If GP3 reads LOW (external pulldown present), it's a right hand
+// If GP3 reads HIGH (pullup active), it's a left hand
+#define HANDEDNESS_PIN GP3
+
+// This function is called before keyboard_pre_init to set handedness in EEPROM
+__attribute__((constructor))
+void detect_handedness_from_pin(void) {
+    // Configure GP3 as input with pullup
+    gpio_set_pin_input_high(HANDEDNESS_PIN);
+    
+    // Wait a bit for the pullup to take effect
+    wait_ms(10);
+    
+    // Read the pin state
+    bool is_right_hand = !gpio_read_pin(HANDEDNESS_PIN);
+    
+    // Update EEPROM handedness if needed
+    if (eeconfig_read_handedness() != !is_right_hand) {
+        eeconfig_update_handedness(!is_right_hand);
+    }
+}
+#endif
 
 saved_values_t global_saved_values;
 const int16_t mh_timer_choices[4] = { 300, 500, 800, -1 }; // -1 is infinite.
@@ -263,5 +290,3 @@ void bootmagic_lite(void) {
 #endif
 
 __attribute__((weak)) void recalibrate_pointer(void) {
-}
-
