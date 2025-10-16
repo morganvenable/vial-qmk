@@ -232,3 +232,10 @@ static inline void ps2_mouse_enable_scrolling(void) {
     PS2_MOUSE_SEND(PS2_MOUSE_GET_DEVICE_ID, "Finished enabling scroll wheel");
     wait_ms(20);
 }
+
+const pointing_device_driver_t ps2_mouse_pointing_device_driver = {
+    .init = ps2_mouse_init,
+    .get_report = ps2_mouse_get_report,
+    .get_cpi = ps2_mouse_get_cpi,
+    .set_cpi = ps2_mouse_set_cpi,
+};

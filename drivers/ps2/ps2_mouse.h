@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>
 #include "debug.h"
 #include "report.h"
+#include "pointing_device.h"
 #include "pointing_device_internal.h"
 
 #define PS2_MOUSE_SEND(command, message)                                                          \
@@ -178,3 +179,5 @@ report_mouse_t ps2_mouse_get_report(report_mouse_t mouse_report);
 uint16_t ps2_mouse_get_cpi(void);
 
 void ps2_mouse_set_cpi(uint16_t cpi);
+
+const pointing_device_driver_t ps2_mouse_pointing_device_driver;
