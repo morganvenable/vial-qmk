@@ -38,6 +38,7 @@ enum layer {
     NAV,
     NAS,
     FUNC,
+    NAVNAS,
     BOARD_CONFIG,
     MBO = MH_AUTO_BUTTONS_LAYER,
 };
@@ -111,6 +112,20 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*LT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           
         ),
 
+    [NAVNAS] = LAYOUT(
+        /*Center           North           East            South           West            Double*/
+        /*R1*/ KC_LEFT           , KC_7              , LSFT(KC_MINUS)    , KC_HOME           , LSFT(KC_5)        , KC_NO             ,
+        /*R2*/ KC_UP             , KC_8              , KC_NO             , KC_PGUP           , LSFT(KC_6)        , KC_NO             ,
+        /*R3*/ KC_DOWN           , KC_PSCR           , KC_NO             , KC_PGDN         , KC_INSERT         , KC_NO             ,
+        /*R4*/ KC_RIGHT          , KC_NO             , KC_NO             , KC_END            , LSFT(KC_0)        , KC_NO             ,
+        /*L1*/ KC_4              , LSFT(KC_4)        , KC_5              , KC_9              , KC_MINUS          , KC_NO             ,
+        /*L2*/ KC_3              , LSFT(KC_3)        , KC_0              , KC_8              , KC_NO             , KC_NO             ,
+        /*L3*/ KC_2              , LSFT(KC_2)        , LSFT(KC_EQUAL)    , KC_7              , KC_NO             , KC_NO             ,
+        /*L4*/ KC_1              , LSFT(KC_1)        , LSFT(KC_9)        , KC_6              , KC_EQUAL          , KC_NO             ,
+        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
+        /*RT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
+        /*LT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           
+        ),
     [BOARD_CONFIG] = LAYOUT(
         /*                  Center              North               East                South               West                (XXX)               */
         /* R1 */            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_NO,
