@@ -37,7 +37,7 @@ enum layer {
     NORMAL,
     NAV,
     NAS,
-    FUNC
+    FUNC,
     BOARD_CONFIG,
     MBO = MH_AUTO_BUTTONS_LAYER,
 };
@@ -48,28 +48,28 @@ enum layer {
 int sval_macro_size = 0;
 uint8_t sval_macros[] = {0};
 const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_COLS] = {
-    /* ===== LAYER_0 ===== */
-    [0] = LAYOUT(
+    /* ===== NORMAL ===== */
+    [NORMAL] = LAYOUT(
         /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_J              , KC_U              , KC_QUOTE          , KC_M              , KC_H              , KC_LEFT           ,
-        /*R2*/ KC_K              , KC_I              , LSFT(KC_SCOLON)   , KC_COMMA          , KC_Y              , KC_UP             ,
-        /*R3*/ KC_L              , KC_O              , MO(4)             , KC_DOT            , KC_N              , KC_DOWN           ,
-        /*R4*/ KC_SCOLON         , KC_P              , KC_BSLASH         , KC_SLASH          , KC_RBRACKET       , KC_RIGHT          ,
-        /*L1*/ KC_F              , KC_R              , KC_G              , KC_V              , LSFT(KC_QUOTE)    , KC_END            ,
-        /*L2*/ KC_D              , KC_E              , KC_T              , KC_C              , KC_GRAVE          , KC_PGDOWN         ,
-        /*L3*/ KC_S              , KC_W              , KC_B              , KC_X              , KC_ESCAPE         , KC_PGUP           ,
-        /*L4*/ KC_A              , KC_Q              , KC_LBRACKET       , KC_Z              , KC_DELETE         , KC_HOME           ,
+        /*R1*/ KC_J              , KC_U              , KC_QUOTE          , KC_M            , KC_H              , KC_LEFT           ,
+        /*R2*/ KC_K              , KC_I              , KC_COLON          , KC_COMMA        , KC_Y              , KC_UP             ,
+        /*R3*/ KC_L              , KC_O              , MO(4)             , KC_DOT          , KC_N              , KC_DOWN           ,
+        /*R4*/ KC_SEMICOLON      , KC_P              , KC_BSLS           , KC_SLASH        , KC_RBRC       , KC_RIGHT          ,
+        /*L1*/ KC_F              , KC_R              , KC_G              , KC_V            , LSFT(KC_QUOTE)    , KC_END            ,
+        /*L2*/ KC_D              , KC_E              , KC_T              , KC_C            , KC_GRAVE          , KC_PGDN         ,
+        /*L3*/ KC_S              , KC_W              , KC_B              , KC_X            , KC_ESCAPE         , KC_PGUP           ,
+        /*L4*/ KC_A              , KC_Q              , KC_LBRC           , KC_Z            , KC_DELETE         , KC_HOME           ,
         /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ MO(1)             , KC_SPACE          , MO(2)             , KC_BSPACE         , KC_LALT           , MO(3)             ,
-        /*LT*/ KC_NO             , LT1(KC_ENTER)     , KC_LSHIFT         , LGUI_T(KC_TAB)    , KC_LCTRL          , KC_CAPSLOCK       ,
+        /*RT*/ MO(1)             , KC_SPACE          , MO(2)             , KC_BSPC       , KC_LALT           , MO(3)             ,
+        /*LT*/ KC_NO             , LT1(KC_ENTER)     , KC_LSFT           , LGUI_T(KC_TAB), KC_LCTL          , KC_CAPS       ,
         ),
 
-    /* ===== LAYER_1 ===== */
-    [1] = LAYOUT(
+    /* ===== FUNC ===== */
+    [NAV] = LAYOUT(
         /*Center           North           East            South           West            Double*/
         /*R1*/ KC_LEFT           , KC_NO             , KC_NO             , KC_HOME           , KC_NO             , KC_NO             ,
         /*R2*/ KC_UP             , KC_NO             , KC_NO             , KC_PGUP           , KC_NO             , KC_NO             ,
-        /*R3*/ KC_DOWN           , KC_NO             , KC_NO             , KC_PGDOWN         , KC_INSERT         , KC_NO             ,
+        /*R3*/ KC_DOWN           , KC_NO             , KC_NO             , KC_PGDN         , KC_INSERT         , KC_NO             ,
         /*R4*/ KC_RIGHT          , KC_NO             , KC_NO             , KC_END            , KC_NO             , KC_NO             ,
         /*L1*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
         /*L2*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
@@ -80,13 +80,13 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*LT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
         ),
 
-    /* ===== LAYER_2 ===== */
-    [2] = LAYOUT(
+    /* ===== NAS ===== */
+    [NAS] = LAYOUT(
         /*Center           North           East            South           West            Double*/
         /*R1*/ KC_7              , LSFT(KC_7)        , LSFT(KC_MINUS)    , KC_KP_PLUS        , KC_6              , KC_NO             ,
         /*R2*/ KC_8              , KC_KP_ASTERISK    , KC_TRNS           , KC_COMMA          , LSFT(KC_6)        , KC_NO             ,
         /*R3*/ KC_9              , LSFT(KC_9)        , KC_TRNS           , KC_DOT            , KC_TRNS           , KC_NO             ,
-        /*R4*/ KC_0              , LSFT(KC_0)        , KC_BSLASH         , LSFT(KC_SLASH)    , KC_RBRACKET       , KC_NO             ,
+        /*R4*/ KC_0              , LSFT(KC_0)        , KC_BSLS         , LSFT(KC_SLASH)    , KC_RBRC       , KC_NO             ,
         /*L1*/ KC_4              , LSFT(KC_4)        , KC_5              , KC_MINUS          , LSFT(KC_5)        , KC_NO             ,
         /*L2*/ KC_3              , LSFT(KC_3)        , KC_TRNS           , LSFT(KC_5)        , KC_TRNS           , KC_NO             ,
         /*L3*/ KC_2              , LSFT(KC_2)        , KC_TRNS           , KC_X              , KC_TRNS           , KC_NO             ,
@@ -96,8 +96,8 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*LT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
         ),
 
-    /* ===== LAYER_3 ===== */
-    [3] = LAYOUT(
+    /* ===== FUNCTION KEYS ===== */
+    [FUNC] = LAYOUT(
         /*Center           North           East            South           West            Double*/
         /*R1*/ KC_F7             , KC_F16            , KC_NO             , KC_F17            , KC_F6             , KC_NO             ,
         /*R2*/ KC_F8             , KC_NO             , KC_NO             , KC_F18            , KC_NO             , KC_NO             ,
@@ -112,184 +112,25 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*LT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
         ),
 
-    /* ===== LAYER_4 ===== */
-    [4] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
-        /*R2*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
-        /*R3*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
-        /*R4*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
-        /*L1*/ KC_TRNS           , USER03            , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
-        /*L2*/ KC_TRNS           , USER02            , KC_TRNS           , USER05            , KC_TRNS           , KC_NO             ,
-        /*L3*/ KC_TRNS           , USER01            , KC_NO             , USER04            , USER09            , KC_NO             ,
-        /*L4*/ USER17            , USER00            , KC_TRNS           , USER07            , KC_TRNS           , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
-        /*LT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
-        ),
+    [BOARD_CONFIG] = LAYOUT(
+        /*                  Center              North               East                South               West                (XXX)               */
+        /* R1 */            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            -1,
+        /* R2 */            KC_TRNS,            RGB_VAI,            KC_TRNS,            RGB_VAD,            KC_TRNS,            -1,
+        /* R3 */            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            -1,
+        /* R4 */            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            -1,
 
-    /* ===== LAYER_5 ===== */
-    [5] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_LEFT           , KC_NO             , LSFT(KC_MINUS)    , KC_HOME           , KC_MINUS          , KC_NO             ,
-        /*R2*/ KC_UP             , KC_NO             , KC_NO             , KC_PGUP           , LSFT(KC_6)        , KC_NO             ,
-        /*R3*/ KC_DOWN           , LSFT(KC_9)        , KC_NO             , KC_PGDOWN         , KC_INSERT         , KC_NO             ,
-        /*R4*/ KC_RIGHT          , LSFT(KC_0)        , KC_BSLASH         , KC_END            , KC_RBRACKET       , KC_NO             ,
-        /*L1*/ KC_3              , KC_9              , KC_MINUS          , KC_6              , LSFT(KC_EQUAL)    , KC_NO             ,
-        /*L2*/ KC_2              , KC_8              , KC_DOT            , KC_5              , KC_NO             , KC_NO             ,
-        /*L3*/ KC_1              , KC_7              , KC_COMMA          , KC_4              , KC_NO             , KC_NO             ,
-        /*L4*/ KC_0              , KC_NO             , KC_LBRACKET       , KC_EQUAL          , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
-        /*LT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
-        ),
+        /* L1 */            SV_OUTPUT_STATUS,       KC_TRNS,             KC_TRNS,         KC_TRNS,            KC_TRNS,            -1,
+        /* L2 */            SV_RIGHT_SCROLL_TOGGLE, SV_RIGHT_DPI_INC,    KC_TRNS,         SV_RIGHT_DPI_DEC,   KC_TRNS,            -1,
+        /* L3 */            SV_LEFT_SCROLL_TOGGLE,  SV_LEFT_DPI_INC,     KC_TRNS,         SV_LEFT_DPI_DEC,    KC_TRNS,            -1,
+        /* L4 */            SV_MH_CHANGE_TIMEOUTS,  SV_TOGGLE_ACHORDION, KC_TRNS,         KC_TRNS,KC_TRNS,            -1,
 
-    /* ===== LAYER_6 ===== */
-    [6] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_TRNS           , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
+        /*                  Down                Pad                 Up                  Nail                Knuckle             Double Down         */
+        /* RT */            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,
+        /* LT */            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS,            KC_TRNS
+      ),
 
-    /* ===== LAYER_7 ===== */
-    [7] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_TRNS           , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
-
-    /* ===== LAYER_8 ===== */
-    [8] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_TRNS           , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
-
-    /* ===== LAYER_9 ===== */
-    [9] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_TRNS           , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
-
-    /* ===== LAYER_10 ===== */
-    [10] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_TRNS           , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
-
-    /* ===== LAYER_11 ===== */
-    [11] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_TRNS           , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
-
-    /* ===== LAYER_12 ===== */
-    [12] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_TRNS           , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
-
-    /* ===== LAYER_13 ===== */
-    [13] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
-
-    /* ===== LAYER_14 ===== */
-    [14] = LAYOUT(
-        /*Center           North           East            South           West            Double*/
-        /*R1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*R4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L1*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L2*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L3*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*L4*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        /*LT*/ KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             , KC_NO             ,
-        ),
-
-    /* ===== LAYER_15 ===== */
-    [15] = LAYOUT(
+    /* ===== MBO ===== */
+    [MBO] = LAYOUT(
         /*Center           North           East            South           West            Double*/
         /*R1*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
         /*R2*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
@@ -297,8 +138,8 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*R4*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_NO             ,
         /*L1*/ KC_BTN1           , KC_TRNS           , KC_TRNS           , LCTL(KC_V)        , KC_NO             , KC_NO             ,
         /*L2*/ KC_BTN3           , KC_TRNS           , KC_TRNS           , LCTL(KC_C)        , KC_NO             , KC_NO             ,
-        /*L3*/ KC_BTN2           , KC_TRNS           , KC_TRNS           , TD(10)            , KC_TRNS           , KC_NO             ,
-        /*L4*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , USER13            , KC_TRNS           , KC_NO             ,
+        /*L3*/ KC_BTN2           , KC_TRNS           , KC_TRNS           , LCTL(KC_X)        , KC_TRNS           , KC_NO             ,
+        /*L4*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , SV_SNIPER_3            , KC_TRNS           , KC_NO             ,
         /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
         /*RT*/ KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           , KC_TRNS           ,
         /*LT*/ KC_TRNS           , KC_BTN1           , KC_TRNS           , KC_BTN2           , KC_TRNS           , KC_TRNS           ,
