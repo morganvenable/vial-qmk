@@ -59,12 +59,11 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L2*/ KC_D              , KC_E              , KC_T              , KC_C            , KC_GRAVE          , KC_PGDN         ,
         /*L3*/ KC_S              , KC_W              , KC_B              , KC_X            , KC_ESCAPE         , KC_PGUP           ,
         /*L4*/ KC_A              , KC_Q              , KC_LBRC           , KC_Z            , KC_DELETE         , KC_HOME           ,
-        /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
-        /*RT*/ MO(NAV)             , KC_SPACE          , MO(NAS)             , KC_BSPC       , KC_LALT           , MO(FUNC)             ,
-        /*LT*/ KC_NO             , KC_ENTER     , KC_LSFT           , LGUI_T(KC_TAB), KC_LCTL          , KC_CAPS       
+        /*     Down                 Pad                Up                  Nail            Knuckle         DoubleDown*/
+        /*RT*/ MO(NAS)             , KC_SPACE        , TO(NAV)           , KC_BSPC       , KC_LALT             , MO(FUNC)             ,
+        /*LT*/ KC_LSFT             , KC_ENTER        , TO(NORMAL)             , LGUI_T(KC_TAB), KC_LCTL             , KC_CAPS       
         ),
 
-    /* ===== FUNC ===== */
     [NAV] = LAYOUT(
         /*Center           North           East            South           West            Double*/
         /*R1*/ KC_LEFT           , KC_NO             , KC_NO             , KC_HOME           , KC_NO             , KC_NO             ,
