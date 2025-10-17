@@ -61,7 +61,7 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
         /*L4*/ KC_A              , KC_Q              , KC_LBRC           , KC_Z            , KC_DELETE         , KC_HOME           ,
         /*Down             Pad             Up              Nail            Knuckle         DoubleDown*/
         /*RT*/ MO(NAV)             , KC_SPACE          , MO(NAS)             , KC_BSPC       , KC_LALT           , MO(FUNC)             ,
-        /*LT*/ KC_NO             , LT1(KC_ENTER)     , KC_LSFT           , LGUI_T(KC_TAB), KC_LCTL          , KC_CAPS       
+        /*LT*/ KC_NO             , KC_ENTER     , KC_LSFT           , LGUI_T(KC_TAB), KC_LCTL          , KC_CAPS       
         ),
 
     /* ===== FUNC ===== */
