@@ -130,86 +130,56 @@ const uint16_t PROGMEM keymaps[DYNAMIC_KEYMAP_LAYER_COUNT][MATRIX_ROWS][MATRIX_C
 };
 #endif
 
-// Key overrides for NAVNAS (layer 1).
-// Shift + number row (1–0)  -> F1–F10
-// Shift + symbol row (!–)   -> F11–F20
-// These only apply while NAVNAS is active.
+// Key override definitions - only active on NAVNAS layer
+// Numbers (1-0) + Shift = F1-F10
+const key_override_t ko_1_f1 = ko_make_with_layers(MOD_MASK_SHIFT, KC_1, KC_F1, 1 << NAVNAS);
+const key_override_t ko_2_f2 = ko_make_with_layers(MOD_MASK_SHIFT, KC_2, KC_F2, 1 << NAVNAS);
+const key_override_t ko_3_f3 = ko_make_with_layers(MOD_MASK_SHIFT, KC_3, KC_F3, 1 << NAVNAS);
+const key_override_t ko_4_f4 = ko_make_with_layers(MOD_MASK_SHIFT, KC_4, KC_F4, 1 << NAVNAS);
+const key_override_t ko_5_f5 = ko_make_with_layers(MOD_MASK_SHIFT, KC_5, KC_F5, 1 << NAVNAS);
+const key_override_t ko_6_f6 = ko_make_with_layers(MOD_MASK_SHIFT, KC_6, KC_F6, 1 << NAVNAS);
+const key_override_t ko_7_f7 = ko_make_with_layers(MOD_MASK_SHIFT, KC_7, KC_F7, 1 << NAVNAS);
+const key_override_t ko_8_f8 = ko_make_with_layers(MOD_MASK_SHIFT, KC_8, KC_F8, 1 << NAVNAS);
+const key_override_t ko_9_f9 = ko_make_with_layers(MOD_MASK_SHIFT, KC_9, KC_F9, 1 << NAVNAS);
+const key_override_t ko_0_f10 = ko_make_with_layers(MOD_MASK_SHIFT, KC_0, KC_F10, 1 << NAVNAS);
 
-const key_override_t nav_shift_1_f1_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_1, KC_F1, 1 << NAVNAS);
-const key_override_t nav_shift_2_f2_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_2, KC_F2, 1 << NAVNAS);
-const key_override_t nav_shift_3_f3_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_3, KC_F3, 1 << NAVNAS);
-const key_override_t nav_shift_4_f4_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_4, KC_F4, 1 << NAVNAS);
-const key_override_t nav_shift_5_f5_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_5, KC_F5, 1 << NAVNAS);
-const key_override_t nav_shift_6_f6_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_6, KC_F6, 1 << NAVNAS);
-const key_override_t nav_shift_7_f7_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_7, KC_F7, 1 << NAVNAS);
-const key_override_t nav_shift_8_f8_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_8, KC_F8, 1 << NAVNAS);
-const key_override_t nav_shift_9_f9_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_9, KC_F9, 1 << NAVNAS);
-const key_override_t nav_shift_0_f10_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, KC_0, KC_F10, 1 << NAVNAS);
+// Symbols (shift+number keys) + Shift = F11-F20
+// On QWERTY: ! @ # $ % ^ & * ( )
+const key_override_t ko_exlm_f11 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_1), KC_F11, 1 << NAVNAS);  // !
+const key_override_t ko_at_f12 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_2), KC_F12, 1 << NAVNAS);    // @
+const key_override_t ko_hash_f13 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_3), KC_F13, 1 << NAVNAS);  // #
+const key_override_t ko_dlr_f14 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_4), KC_F14, 1 << NAVNAS);   // $
+const key_override_t ko_perc_f15 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_5), KC_F15, 1 << NAVNAS);  // %
+const key_override_t ko_circ_f16 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_6), KC_F16, 1 << NAVNAS);  // ^
+const key_override_t ko_ampr_f17 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_7), KC_F17, 1 << NAVNAS);  // &
+const key_override_t ko_astr_f18 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_8), KC_F18, 1 << NAVNAS);  // *
+const key_override_t ko_lprn_f19 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_9), KC_F19, 1 << NAVNAS);  // (
+const key_override_t ko_rprn_f20 = ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_0), KC_F20, 1 << NAVNAS);  // )
 
-// Symbol row: your NAVNAS north row is LSFT(KC_1) ... LSFT(KC_0).
-// Pressing those normally gives ! @ # $ % ^ & * ( ).
-// Holding Shift *again* while pressing them gives F11–F20.
-
-const key_override_t nav_shift_exclam_f11_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_1), KC_F11, 1 << NAVNAS);
-const key_override_t nav_shift_at_f12_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_2), KC_F12, 1 << NAVNAS);
-const key_override_t nav_shift_hash_f13_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_3), KC_F13, 1 << NAVNAS);
-const key_override_t nav_shift_dollar_f14_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_4), KC_F14, 1 << NAVNAS);
-const key_override_t nav_shift_percent_f15_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_5), KC_F15, 1 << NAVNAS);
-const key_override_t nav_shift_caret_f16_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_6), KC_F16, 1 << NAVNAS);
-const key_override_t nav_shift_amp_f17_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_7), KC_F17, 1 << NAVNAS);
-const key_override_t nav_shift_star_f18_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_8), KC_F18, 1 << NAVNAS);
-const key_override_t nav_shift_lparen_f19_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_9), KC_F19, 1 << NAVNAS);
-const key_override_t nav_shift_rparen_f20_override =
-    ko_make_with_layers(MOD_MASK_SHIFT, LSFT(KC_0), KC_F20, 1 << NAVNAS);
-
-// Register all overrides here (must be NULL-terminated).
-const key_override_t **key_overrides = (const key_override_t *[]) {
-    // Shift + numbers -> F1–F10
-    &nav_shift_1_f1_override,
-    &nav_shift_2_f2_override,
-    &nav_shift_3_f3_override,
-    &nav_shift_4_f4_override,
-    &nav_shift_5_f5_override,
-    &nav_shift_6_f6_override,
-    &nav_shift_7_f7_override,
-    &nav_shift_8_f8_override,
-    &nav_shift_9_f9_override,
-    &nav_shift_0_f10_override,
-
-    // Shift + symbol row (!–) -> F11–F20
-    &nav_shift_exclam_f11_override,
-    &nav_shift_at_f12_override,
-    &nav_shift_hash_f13_override,
-    &nav_shift_dollar_f14_override,
-    &nav_shift_percent_f15_override,
-    &nav_shift_caret_f16_override,
-    &nav_shift_amp_f17_override,
-    &nav_shift_star_f18_override,
-    &nav_shift_lparen_f19_override,
-    &nav_shift_rparen_f20_override,
-
-    NULL
+// Array of all key overrides
+const key_override_t **key_overrides = (const key_override_t *[]){
+    &ko_1_f1,
+    &ko_2_f2,
+    &ko_3_f3,
+    &ko_4_f4,
+    &ko_5_f5,
+    &ko_6_f6,
+    &ko_7_f7,
+    &ko_8_f8,
+    &ko_9_f9,
+    &ko_0_f10,
+    &ko_exlm_f11,
+    &ko_at_f12,
+    &ko_hash_f13,
+    &ko_dlr_f14,
+    &ko_perc_f15,
+    &ko_circ_f16,
+    &ko_ampr_f17,
+    &ko_astr_f18,
+    &ko_lprn_f19,
+    &ko_rprn_f20,
+    NULL  // Terminator
 };
-
 
 void keyboard_post_init_user(void) {
   // Customise these values if you need to debug the matrix
