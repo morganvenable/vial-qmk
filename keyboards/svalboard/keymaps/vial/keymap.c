@@ -22,8 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>
 #include <stdint.h>
 #include "svalboard.h"
-#include "key_override.h"
-
 
 layer_state_t default_layer_state_set_user(layer_state_t state) {
   sval_set_active_layer(0, false);
