@@ -23,11 +23,11 @@ def compute(expr):
 
 
 def _eval(node):
-    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):  # <number>
-        return node.n
-    elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
-        return operators[type(node.op)](_eval(node.left), _eval(node.right))
-    elif isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
-        return operators[type(node.op)](_eval(node.operand))
+    if isinstance(node, ast.Constant):  # Python 3.8+
+        return node.value
+    elif isinstance(node, ast.BinOp):
+        return _operators[type(node.op)](_eval(node.left), _eval(node.right))
+    elif isinstance(node, ast.UnaryOp):
+        return _operators[type(node.op)](_eval(node.operand))
     else:
         raise TypeError(node)
