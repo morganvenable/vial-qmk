@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "svalboard.h"
 #include "keymap_support.h"
 #include "axis_scale.h"
+#include "pvs.h"
 
 // in keymap.c:
 #ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
@@ -51,7 +52,7 @@ axis_scale_t l_y = {1, SCROLL_DIVISOR, SCROLL_MULTIPLIER};
 axis_scale_t r_x = {1, SCROLL_DIVISOR, SCROLL_MULTIPLIER};
 axis_scale_t r_y = {1, SCROLL_DIVISOR, SCROLL_MULTIPLIER};
 
-#define MAC_DIVISOR 120
+#define MAC_DIVISOR 12
 bool is_mac = false;
 bool process_detected_host_os_kb(os_variant_t os) {
     if (!process_detected_host_os_user(os)) {
@@ -91,13 +92,22 @@ int32_t m_scroll_accumulator_v = 0;
 
 bool scroll_timer_running = false;
 
-uint8_t sniper_count = 0;
+uint8_t sniper_hold_2 = 0;
+uint8_t sniper_hold_3 = 0;
+uint8_t sniper_hold_5 = 0;
+
 bool sniper_toggle_2 = false;
 bool sniper_toggle_3 = false;
 bool sniper_toggle_5 = false;
 
+#define any_sniper_active() (sniper_hold_2 + sniper_toggle_2 + \
+    sniper_hold_3 + sniper_toggle_3 + sniper_hold_5 + sniper_toggle_5 > 0)
+
 static bool scroll_hold    = false,
             scroll_toggle  = false;
+
+static bool pvs_hold    = false,
+            pvs_toggle  = false;
 
 
 #define AXIS_LOCK_BREAKAWAY_THRESHOLD 18750
@@ -186,24 +196,21 @@ void update_axis_scroll_mode(int32_t h, int32_t v) {
     }
 }
 
-void handle_sniper_key(bool pressed, uint8_t divisor) {
-    if (!pressed) {
-        div_div_axis(&sniper_x, divisor);
-        div_div_axis(&sniper_y, divisor);
-        div_div_axis(&sniper_h, divisor);
-        div_div_axis(&sniper_v, divisor);
-    } else {
-        mult_div_axis(&sniper_x, divisor);
-        mult_div_axis(&sniper_y, divisor);
-        mult_div_axis(&sniper_h, divisor);
-        mult_div_axis(&sniper_v, divisor);
-    }
+void update_sniper_divisor(void) {
+    uint8_t div = 1;
+    for (uint8_t i = 0; i < sniper_hold_2 + sniper_toggle_2; i++) div *= 2;
+    for (uint8_t i = 0; i < sniper_hold_3 + sniper_toggle_3; i++) div *= 3;
+    for (uint8_t i = 0; i < sniper_hold_5 + sniper_toggle_5; i++) div *= 5;
+    set_div_axis(&sniper_x, div);
+    set_div_axis(&sniper_y, div);
+    set_div_axis(&sniper_h, div);
+    set_div_axis(&sniper_v, div);
 }
 
 report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, report_mouse_t reportMouse2) {
     report_mouse_t ret_mouse;
 
-    if (sniper_count > 0) {
+    if (any_sniper_active()) {
         reportMouse1.x = add_to_axis(&sniper_x, reportMouse1.x);
         reportMouse1.y = add_to_axis(&sniper_y, reportMouse1.y);
         reportMouse1.h = add_to_axis(&sniper_h, reportMouse1.h);
@@ -215,18 +222,54 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
         reportMouse2.v = add_to_axis(&sniper_v, reportMouse2.v);
     }
 
+    // PVS intercept: when active, feed deltas into PVS and bypass normal scroll
+    if (pvs_is_active()) {
+        // Use left trackball for PVS (scrolling side), right as fallback
+        int16_t pvs_dx, pvs_dy;
+        if (global_saved_values.left_scroll) {
+            pvs_dx = reportMouse1.x;
+            pvs_dy = reportMouse1.y;
+            reportMouse1.x = 0;
+            reportMouse1.y = 0;
+        } else {
+            pvs_dx = reportMouse2.x;
+            pvs_dy = reportMouse2.y;
+            reportMouse2.x = 0;
+            reportMouse2.y = 0;
+        }
+
+        int16_t pvs_h = 0, pvs_v = 0;
+        pvs_process_deltas(pvs_dx, -pvs_dy, &pvs_h, &pvs_v);  // negate Y for natural scroll direction
+
+        // Apply PVS scroll output to the report
+        reportMouse1.h = pvs_h;
+        reportMouse1.v = pvs_v;
+
+        if (pvs_h != 0 || pvs_v != 0) {
+            mouse_mode(true);
+        }
+
+        ret_mouse = pointing_device_combine_reports(reportMouse1, reportMouse2);
+        return pointing_device_task_user(ret_mouse);
+    }
+
     if (reportMouse1.x == 0 && reportMouse1.y == 0 && reportMouse2.x == 0 && reportMouse2.y == 0)
         return pointing_device_combine_reports(reportMouse1, reportMouse2);
 
-    if ((global_saved_values.left_scroll != scroll_hold) != scroll_toggle) {
+    // Track scroll input BEFORE division (h/v after division may be 0 due to accumulation)
+    bool left_scrolling = (global_saved_values.left_scroll != scroll_hold) != scroll_toggle;
+    bool right_scrolling = (global_saved_values.right_scroll != scroll_hold) != scroll_toggle;
+    bool has_scroll_input = (left_scrolling && (reportMouse1.x != 0 || reportMouse1.y != 0)) ||
+                            (right_scrolling && (reportMouse2.x != 0 || reportMouse2.y != 0));
+
+    if (left_scrolling) {
         reportMouse1.h = add_to_axis(&l_x, reportMouse1.x);
         reportMouse1.v = add_to_axis(&l_y, -reportMouse1.y);
 
-	
         reportMouse1.x = 0;
         reportMouse1.y = 0;
     }
-    if ((global_saved_values.right_scroll != scroll_hold) != scroll_toggle) {
+    if (right_scrolling) {
         reportMouse2.h = add_to_axis(&r_x, reportMouse2.x);
         reportMouse2.v = add_to_axis(&r_y, -reportMouse2.y);
 
@@ -234,7 +277,7 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
         reportMouse2.y = 0;
     }
 
-    if ((reportMouse1.h != 0 || reportMouse1.v != 0 || reportMouse2.h != 0 || reportMouse2.v != 0) && !scroll_timer_running) {
+    if (has_scroll_input && !scroll_timer_running) {
         scroll_timer_running = true;
         scroll_timer = timer_read();
     }
@@ -366,8 +409,17 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 	                    keycode == SV_MH_CHANGE_TIMEOUTS || \
                         keycode == SV_TOGGLE_AUTOMOUSE)
 
+        // Sniper toggles are instant actions, not held keys — they should not
+        // affect mouse_keys_pressed or reset the timer. Only mouse movement
+        // should keep the mouse layer active when a sniper toggle is used.
+#define MOUSE_PASSTHROUGH_KEYCODE (keycode == SV_SNIPER_2_TG || \
+                        keycode == SV_SNIPER_3_TG || \
+                        keycode == SV_SNIPER_5_TG)
+
         uint16_t layer_keycode = keymap_key_to_keycode(MH_AUTO_BUTTONS_LAYER, record->event.key);
-        if (BAD_KEYCODE_CONDITONAL ||
+        if (MOUSE_PASSTHROUGH_KEYCODE) {
+            // Fall through to switch statement without touching mouse mode state
+        } else if (BAD_KEYCODE_CONDITONAL ||
 	    layer_keycode != keycode) {
 #ifdef CONSOLE_ENABLE
             uprintf("process_record - mh_auto_buttons: off\n");
@@ -437,34 +489,28 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 check_layer_67();
                 return false;
             case SV_SNIPER_2:
-                sniper_count++;
-                handle_sniper_key(true, 2);
+                sniper_hold_2++;
+                update_sniper_divisor();
                 return false;
             case SV_SNIPER_3:
-                sniper_count++;
-                handle_sniper_key(true, 3);
+                sniper_hold_3++;
+                update_sniper_divisor();
                 return false;
             case SV_SNIPER_5:
-                sniper_count++;
-                handle_sniper_key(true, 5);
+                sniper_hold_5++;
+                update_sniper_divisor();
                 return false;
             case SV_SNIPER_2_TG:
                 sniper_toggle_2 = !sniper_toggle_2;
-                if (sniper_toggle_2) sniper_count++;
-                else if (sniper_count > 0) sniper_count--;
-                handle_sniper_key(sniper_toggle_2, 2);
+                update_sniper_divisor();
                 return false;
             case SV_SNIPER_3_TG:
                 sniper_toggle_3 = !sniper_toggle_3;
-                if (sniper_toggle_3) sniper_count++;
-                else if (sniper_count > 0) sniper_count--;
-                handle_sniper_key(sniper_toggle_3, 3);
+                update_sniper_divisor();
                 return false;
             case SV_SNIPER_5_TG:
                 sniper_toggle_5 = !sniper_toggle_5;
-                if (sniper_toggle_5) sniper_count++;
-                else if (sniper_count > 0) sniper_count--;
-                handle_sniper_key(sniper_toggle_5, 5);
+                update_sniper_divisor();
                 return false;
             case SV_SCROLL_HOLD:
                 scroll_hold = true;
@@ -486,6 +532,37 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 	    case SV_TURBO_SCAN:
 	        change_turbo_scan();
 	        return false;
+	    case SV_PVS_HOLD:
+	        pvs_hold = true;
+	        pvs_activate(global_saved_values.left_scroll ? get_left_dpi() : get_right_dpi());
+	        return false;
+	    case SV_PVS_TOGGLE:
+	        pvs_toggle = !pvs_toggle;
+	        if (pvs_toggle) {
+	            pvs_activate(global_saved_values.left_scroll ? get_left_dpi() : get_right_dpi());
+	        } else {
+	            pvs_deactivate();
+	        }
+	        return false;
+	    case SV_PVS_CYCLE_MODE:
+	        global_saved_values.pvs_config.curve_mode = (global_saved_values.pvs_config.curve_mode + 1) % 2;
+	        pvs_set_config(&global_saved_values.pvs_config);
+	        write_eeprom_kb();
+	        return false;
+	    case SV_PVS_SPEED_UP:
+	        if (global_saved_values.pvs_config.max_velocity_index < 7) {
+	            global_saved_values.pvs_config.max_velocity_index++;
+	            pvs_set_config(&global_saved_values.pvs_config);
+	            write_eeprom_kb();
+	        }
+	        return false;
+	    case SV_PVS_SPEED_DOWN:
+	        if (global_saved_values.pvs_config.max_velocity_index > 0) {
+	            global_saved_values.pvs_config.max_velocity_index--;
+	            pvs_set_config(&global_saved_values.pvs_config);
+	            write_eeprom_kb();
+	        }
+	        return false;
         }
     } else { // key released
         switch (keycode) {
@@ -501,16 +578,16 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 check_layer_67();
                 return false;
             case SV_SNIPER_2:
-                if (sniper_count > 0) sniper_count--;
-                handle_sniper_key(false, 2);
+                if (sniper_hold_2 > 0) sniper_hold_2--;
+                update_sniper_divisor();
                 return false;
             case SV_SNIPER_3:
-                if (sniper_count > 0) sniper_count--;
-                handle_sniper_key(false, 3);
+                if (sniper_hold_3 > 0) sniper_hold_3--;
+                update_sniper_divisor();
                 return false;
             case SV_SNIPER_5:
-                if (sniper_count > 0) sniper_count--;
-                handle_sniper_key(false, 5);
+                if (sniper_hold_5 > 0) sniper_hold_5--;
+                update_sniper_divisor();
                 return false;
             case SV_SNIPER_2_TG:
             case SV_SNIPER_3_TG:
@@ -521,6 +598,17 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
                 return false;
             case SV_SCROLL_TOGGLE:
                 scroll_toggle ^= true;
+                return false;
+            case SV_PVS_HOLD:
+                pvs_hold = false;
+                if (!pvs_toggle) {
+                    pvs_deactivate();
+                }
+                return false;
+            case SV_PVS_TOGGLE:
+            case SV_PVS_CYCLE_MODE:
+            case SV_PVS_SPEED_UP:
+            case SV_PVS_SPEED_DOWN:
                 return false;
         }
     }

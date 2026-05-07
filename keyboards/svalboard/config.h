@@ -34,8 +34,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define FORCE_NKRO
 #define EE_HANDS
 //#define DEBUG_MATRIX_SCAN_RATE
-// Data size is 5 + (16 * 3), to include layer colors in HSV struct.
-#define EECONFIG_KB_DATA_SIZE 54
+// Data size is 5 + (16 * 3) + 1 (turbo_scan) + 8 (pvs_config) = 62
+#define EECONFIG_KB_DATA_SIZE 62
 
 #define FLASH_LEN (16 * 1024 * 1024)
 #define WEAR_LEVELING_BACKING_SIZE (128 * 1024)

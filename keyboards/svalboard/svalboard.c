@@ -67,6 +67,11 @@ void read_eeprom_kb(void) {
         global_saved_values.version = 6;
         global_saved_values.turbo_scan = 0;
     }
+    if (global_saved_values.version < 7) {
+        global_saved_values.version = 7;
+        global_saved_values.pvs_config = (pvs_config_t)PVS_DEFAULT_CONFIG;
+        modified = true;
+    }
 
     // As we add versions, just append here.
     if (modified) {
@@ -202,6 +207,7 @@ void via_init_kb(void) {
 void keyboard_post_init_kb(void) {
     read_eeprom_kb();
     set_dpi_from_eeprom();
+    pvs_set_config(&global_saved_values.pvs_config);
     keyboard_post_init_user();
     transaction_register_rpc(KEYBOARD_SYNC_A, kb_sync_listener);
     if (is_keyboard_master()) {

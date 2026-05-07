@@ -82,6 +82,21 @@
         "name": "SV_SNIPER_5"
       },
       {
+        "shortName": "Sniper\n2xTG",
+        "title": "Toggle slowing the cursor 2x.",
+        "name": "SV_SNIPER_2_TG"
+      },
+      {
+        "shortName": "Sniper\n3xTG",
+        "title": "Toggle slowing the cursor 3x.",
+        "name": "SV_SNIPER_3_TG"
+      },
+      {
+        "shortName": "Sniper\n5xTG",
+        "title": "Toggle slowing the cursor 5x.",
+        "name": "SV_SNIPER_5_TG"
+      },
+      {
 	"shortName": "Scroll\nToggle\nHold",
 	"title": "Hold to toggle the scrolling mode of both pointers.",
 	"name": "SV_SCROLL_HOLD"
@@ -105,6 +120,31 @@
 	 "shortName": "Turbo\nScan",
 	 "title": "Change the scan mode of the keyboard.",
 	 "name": "SV_TURBO_SCAN"
+      },
+      {
+        "shortName": "PVS\nHold",
+        "title": "Hold for proportional velocity scrolling. Trackball displacement from press point sets scroll speed.",
+        "name": "SV_PVS_HOLD"
+      },
+      {
+        "shortName": "PVS\nToggle",
+        "title": "Toggle proportional velocity scrolling on/off.",
+        "name": "SV_PVS_TOGGLE"
+      },
+      {
+        "shortName": "PVS\nMode",
+        "title": "Cycle PVS curve mode: continuous quadratic / 7-zone shuttle.",
+        "name": "SV_PVS_CYCLE_MODE"
+      },
+      {
+        "shortName": "PVS\nSpeed+",
+        "title": "Increase PVS maximum scroll velocity.",
+        "name": "SV_PVS_SPEED_UP"
+      },
+      {
+        "shortName": "PVS\nSpeed-",
+        "title": "Decrease PVS maximum scroll velocity.",
+        "name": "SV_PVS_SPEED_DOWN"
       }
     ],
     "layouts": {

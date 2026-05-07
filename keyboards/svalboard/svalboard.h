@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "quantum.h"
+#include "pvs.h"
 
 extern const int16_t mh_timer_choices[6];
 extern bool fresh_install;
@@ -28,7 +29,7 @@ struct layer_hsv {
 };
 
 struct __attribute__((__packed__)) saved_values {
-    uint8_t version;  // Currently at 1,  We assume all new data will be zeroed.
+    uint8_t version;  // Bump when adding fields. Currently at 2.
     bool left_scroll :1;
     bool right_scroll :1;
     bool axis_scroll_lock: 1;
@@ -39,6 +40,7 @@ struct __attribute__((__packed__)) saved_values {
     uint8_t mh_timer_index;
     struct layer_hsv layer_colors[DYNAMIC_KEYMAP_LAYER_COUNT];
     uint8_t turbo_scan;
+    pvs_config_t pvs_config;  // 8 bytes
 };
 
 #define SVAL_PROTO_VERSION 3
