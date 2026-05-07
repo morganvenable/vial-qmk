@@ -72,6 +72,13 @@ void read_eeprom_kb(void) {
         global_saved_values.pvs_config = (pvs_config_t)PVS_DEFAULT_CONFIG;
         modified = true;
     }
+    if (global_saved_values.version < 8) {
+        // Reapply PVS defaults so deadzone=0 (and any other tuning) takes effect
+        // for users who already migrated to v7.
+        global_saved_values.version = 8;
+        global_saved_values.pvs_config = (pvs_config_t)PVS_DEFAULT_CONFIG;
+        modified = true;
+    }
 
     // As we add versions, just append here.
     if (modified) {

@@ -31,14 +31,14 @@ typedef struct __attribute__((__packed__)) {
     uint8_t max_displacement;    // Full travel range (default 250, stored as-is)
     uint8_t curve_mode;          // 0 = continuous quadratic, 1 = zoned/shuttle
     uint8_t max_velocity_index;  // Index into velocity table (0-7, default 4)
-    uint8_t decay_speed;         // Position decay: 0=fast(500ms), 255=slow(10s), default 128(~3s)
+    uint8_t decay_speed;         // Reserved (was: position decay rate). Position no longer decays; kept for EEPROM layout compat.
     uint8_t gamma_index;         // 0=linear, 1=quadratic, 2=cubic (default 1)
     uint8_t reserved;            // Future use
 } pvs_config_t;
 
 // Default configuration values
-#define PVS_DEFAULT_DEAD_ZONE_ENTER   30
-#define PVS_DEFAULT_DEAD_ZONE_EXIT    20
+#define PVS_DEFAULT_DEAD_ZONE_ENTER   0
+#define PVS_DEFAULT_DEAD_ZONE_EXIT    0
 #define PVS_DEFAULT_MAX_DISPLACEMENT  250
 #define PVS_DEFAULT_CURVE_MODE        0
 #define PVS_DEFAULT_MAX_VEL_INDEX     4

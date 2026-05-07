@@ -29,7 +29,7 @@ struct layer_hsv {
 };
 
 struct __attribute__((__packed__)) saved_values {
-    uint8_t version;  // Bump when adding fields. Currently at 2.
+    uint8_t version;  // Bump when adding fields or changing defaults. Currently at 8.
     bool left_scroll :1;
     bool right_scroll :1;
     bool axis_scroll_lock: 1;

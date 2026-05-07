@@ -43,6 +43,11 @@ typedef struct {
 #define PVS_FLUSH_MS          10    // Matches existing SCROLL_FREQUENCY_MS
 #define PVS_POS_MAX_INT       500   // Max displacement in normalized units
 
+// Per-tick input deadband (raw sensor counts). Set to 0 to disable —
+// PMW3389 sensor noise at rest tends to average to zero, so integration
+// drift is minimal in practice. Bump to 1 or 2 only if drift is observed.
+#define PVS_INPUT_DEADBAND    0
+
 // Max velocity table: hi-res scroll counts per second (120 counts = 1 detent)
 // Index 0..7 gives progressively faster top speeds
 static const int32_t pvs_max_vel_table[] = {
@@ -97,12 +102,6 @@ static inline int32_t clamp32(int32_t val, int32_t lo, int32_t hi) {
     return val;
 }
 
-// Convert decay_speed byte (0-255) to decay ticks (500-10000)
-static inline int32_t decay_ticks_from_config(void) {
-    // Linear interpolation: 0 → 500, 255 → 10000
-    return 500 + ((int32_t)config.decay_speed * 9500) / 255;
-}
-
 // Get max velocity from config index
 static inline int32_t max_velocity(void) {
     uint8_t idx = config.max_velocity_index;
@@ -115,25 +114,16 @@ static inline int32_t max_velocity(void) {
 static void pvs_accumulate_pos(int16_t dx, int16_t dy) {
     int32_t max_pos = (int32_t)PVS_POS_MAX_INT << 16;
 
+    // Drop sub-deadband per-tick deltas before integrating. Without this,
+    // tiny sensor flutter would slowly walk the position away from zero.
+    if (dx >= -PVS_INPUT_DEADBAND && dx <= PVS_INPUT_DEADBAND) dx = 0;
+    if (dy >= -PVS_INPUT_DEADBAND && dy <= PVS_INPUT_DEADBAND) dy = 0;
+
     pos.x += (int32_t)dx * dpi_scale;
     pos.y += (int32_t)dy * dpi_scale;
 
     pos.x = clamp32(pos.x, -max_pos, max_pos);
     pos.y = clamp32(pos.y, -max_pos, max_pos);
-}
-
-static void pvs_apply_decay(void) {
-    int32_t ticks = decay_ticks_from_config();
-
-    int32_t decay_x = pos.x / ticks;
-    int32_t decay_y = pos.y / ticks;
-
-    // Anti-stall: ensure progress toward zero even for small positions
-    if (pos.x != 0 && decay_x == 0) decay_x = (pos.x > 0) ? 1 : -1;
-    if (pos.y != 0 && decay_y == 0) decay_y = (pos.y > 0) ? 1 : -1;
-
-    pos.x -= decay_x;
-    pos.y -= decay_y;
 }
 
 // ─── Dead zone with hysteresis ────────────────────────────────────
@@ -253,16 +243,13 @@ void pvs_process_deltas(int16_t dx, int16_t dy, int16_t *out_h, int16_t *out_v) 
 
     if (state == PVS_IDLE) return;
 
-    // 1. Accumulate DPI-normalized position
+    // 1. Accumulate DPI-normalized position (with input deadband to drop noise)
     pvs_accumulate_pos(dx, dy);
 
-    // 2. Apply decay toward zero (counteracts sensor drift)
-    pvs_apply_decay();
-
-    // 3. Update state machine (dead zone hysteresis)
+    // 2. Update state machine (dead zone hysteresis)
     pvs_update_state();
 
-    // 4. Generate scroll output at flush interval
+    // 3. Generate scroll output at flush interval
     if (state == PVS_SCROLLING && timer_elapsed(flush_timer) >= PVS_FLUSH_MS) {
         flush_timer = timer_read();
 
