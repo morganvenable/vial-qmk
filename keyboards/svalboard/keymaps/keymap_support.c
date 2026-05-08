@@ -245,9 +245,10 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
         reportMouse1.h = pvs_h;
         reportMouse1.v = pvs_v;
 
-        if (pvs_h != 0 || pvs_v != 0) {
-            mouse_mode(true);
-        }
+        // PVS deliberately does NOT call mouse_mode(true): scrolling here
+        // shouldn't keep the auto-mouse layer alive. Lets the user park the
+        // trackball at a fixed displacement and cruise without the mouse
+        // layer staying on indefinitely.
 
         ret_mouse = pointing_device_combine_reports(reportMouse1, reportMouse2);
         return pointing_device_task_user(ret_mouse);
