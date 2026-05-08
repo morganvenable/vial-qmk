@@ -222,11 +222,15 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
         reportMouse2.v = add_to_axis(&sniper_v, reportMouse2.v);
     }
 
-    // PVS intercept: when active, feed deltas into PVS and bypass normal scroll
-    if (pvs_is_active()) {
-        // Use left trackball for PVS (scrolling side), right as fallback
+    // PVS replaces only the scroll-side delta-to-h/v transformation; the
+    // pointing-side x,y flow on through unchanged so QMK's auto-mouse-layer
+    // framework still activates the mouse layer on cursor motion.
+    bool pvs_active = pvs_is_active();
+    bool pvs_uses_left = global_saved_values.left_scroll;
+
+    if (pvs_active) {
         int16_t pvs_dx, pvs_dy;
-        if (global_saved_values.left_scroll) {
+        if (pvs_uses_left) {
             pvs_dx = reportMouse1.x;
             pvs_dy = reportMouse1.y;
             reportMouse1.x = 0;
@@ -237,21 +241,10 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
             reportMouse2.x = 0;
             reportMouse2.y = 0;
         }
-
         int16_t pvs_h = 0, pvs_v = 0;
         pvs_process_deltas(pvs_dx, -pvs_dy, &pvs_h, &pvs_v);  // negate Y for natural scroll direction
-
-        // Apply PVS scroll output to the report
         reportMouse1.h = pvs_h;
         reportMouse1.v = pvs_v;
-
-        // PVS deliberately does NOT call mouse_mode(true): scrolling here
-        // shouldn't keep the auto-mouse layer alive. Lets the user park the
-        // trackball at a fixed displacement and cruise without the mouse
-        // layer staying on indefinitely.
-
-        ret_mouse = pointing_device_combine_reports(reportMouse1, reportMouse2);
-        return pointing_device_task_user(ret_mouse);
     }
 
     if (reportMouse1.x == 0 && reportMouse1.y == 0 && reportMouse2.x == 0 && reportMouse2.y == 0)
@@ -260,17 +253,19 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
     // Track scroll input BEFORE division (h/v after division may be 0 due to accumulation)
     bool left_scrolling = (global_saved_values.left_scroll != scroll_hold) != scroll_toggle;
     bool right_scrolling = (global_saved_values.right_scroll != scroll_hold) != scroll_toggle;
-    bool has_scroll_input = (left_scrolling && (reportMouse1.x != 0 || reportMouse1.y != 0)) ||
-                            (right_scrolling && (reportMouse2.x != 0 || reportMouse2.y != 0));
+    bool left_pvs_owned = pvs_active && pvs_uses_left;
+    bool right_pvs_owned = pvs_active && !pvs_uses_left;
+    bool has_scroll_input = (left_scrolling && !left_pvs_owned && (reportMouse1.x != 0 || reportMouse1.y != 0)) ||
+                            (right_scrolling && !right_pvs_owned && (reportMouse2.x != 0 || reportMouse2.y != 0));
 
-    if (left_scrolling) {
+    if (left_scrolling && !left_pvs_owned) {
         reportMouse1.h = add_to_axis(&l_x, reportMouse1.x);
         reportMouse1.v = add_to_axis(&l_y, -reportMouse1.y);
 
         reportMouse1.x = 0;
         reportMouse1.y = 0;
     }
-    if (right_scrolling) {
+    if (right_scrolling && !right_pvs_owned) {
         reportMouse2.h = add_to_axis(&r_x, reportMouse2.x);
         reportMouse2.v = add_to_axis(&r_y, -reportMouse2.y);
 
@@ -278,6 +273,9 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
         reportMouse2.y = 0;
     }
 
+    // PVS produces final per-tick scroll output; skip the accumulator /
+    // axis-lock pipeline so it doesn't double-process or distort PVS h/v.
+    if (!pvs_active) {
     if (has_scroll_input && !scroll_timer_running) {
         scroll_timer_running = true;
         scroll_timer = timer_read();
@@ -316,6 +314,7 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
 	m_scroll_accumulator_h = 0;
 	m_scroll_accumulator_v = 0;
     }
+    } // end if (!pvs_active)
 
     mouse_mode(true);
     ret_mouse = pointing_device_combine_reports(reportMouse1, reportMouse2);
