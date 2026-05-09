@@ -109,6 +109,31 @@ static bool scroll_hold    = false,
 static bool pvs_hold    = false,
             pvs_toggle  = false;
 
+// Legacy-scroll remainder state. When global_saved_values.legacy_scroll is on,
+// hi-res scroll output (h,v) is divided by 120 before leaving the device so that
+// pre-Vista apps (PACS, etc.) that ignore the HID Resolution Multiplier feature
+// see one count per detent instead of 120. Fractional remainders are preserved
+// across ticks so PVS's per-tick output isn't lost to truncation.
+#define LEGACY_SCROLL_DIVISOR  POINTING_DEVICE_HIRES_SCROLL_MULTIPLIER
+static int32_t legacy_scroll_remainder_h = 0;
+static int32_t legacy_scroll_remainder_v = 0;
+
+static inline void apply_legacy_scroll(report_mouse_t *r) {
+    if (!global_saved_values.legacy_scroll) {
+        legacy_scroll_remainder_h = 0;
+        legacy_scroll_remainder_v = 0;
+        return;
+    }
+    int32_t total_h = (int32_t)r->h + legacy_scroll_remainder_h;
+    int32_t total_v = (int32_t)r->v + legacy_scroll_remainder_v;
+    int32_t out_h = total_h / LEGACY_SCROLL_DIVISOR;
+    int32_t out_v = total_v / LEGACY_SCROLL_DIVISOR;
+    legacy_scroll_remainder_h = total_h - out_h * LEGACY_SCROLL_DIVISOR;
+    legacy_scroll_remainder_v = total_v - out_v * LEGACY_SCROLL_DIVISOR;
+    r->h = (int16_t)out_h;
+    r->v = (int16_t)out_v;
+}
+
 
 #define AXIS_LOCK_BREAKAWAY_THRESHOLD 18750
 #define AXIS_LOCK_ENGAGE_THRESHOLD 6250
@@ -247,8 +272,11 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
         reportMouse1.v = pvs_v;
     }
 
-    if (reportMouse1.x == 0 && reportMouse1.y == 0 && reportMouse2.x == 0 && reportMouse2.y == 0)
-        return pointing_device_combine_reports(reportMouse1, reportMouse2);
+    if (reportMouse1.x == 0 && reportMouse1.y == 0 && reportMouse2.x == 0 && reportMouse2.y == 0) {
+        ret_mouse = pointing_device_combine_reports(reportMouse1, reportMouse2);
+        apply_legacy_scroll(&ret_mouse);
+        return ret_mouse;
+    }
 
     // Track scroll input BEFORE division (h/v after division may be 0 due to accumulation)
     bool left_scrolling = (global_saved_values.left_scroll != scroll_hold) != scroll_toggle;
@@ -318,6 +346,8 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
 
     mouse_mode(true);
     ret_mouse = pointing_device_combine_reports(reportMouse1, reportMouse2);
+
+    apply_legacy_scroll(&ret_mouse);
 
     return pointing_device_task_user(ret_mouse);
 }
@@ -562,6 +592,10 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 	            pvs_set_config(&global_saved_values.pvs_config);
 	            write_eeprom_kb();
 	        }
+	        return false;
+	    case SV_LEGACY_SCROLL_TOGGLE:
+	        global_saved_values.legacy_scroll = !global_saved_values.legacy_scroll;
+	        write_eeprom_kb();
 	        return false;
         }
     } else { // key released

@@ -50,6 +50,7 @@ enum my_keycodes {
     SV_PVS_CYCLE_MODE,
     SV_PVS_SPEED_UP,
     SV_PVS_SPEED_DOWN,
+    SV_LEGACY_SCROLL_TOGGLE,
     KC_NORMAL_HOLD = SAFE_RANGE,
     KC_FUNC_HOLD,
     SV_SAFE_RANGE, // Keycodes over this are safe on Svalboard.

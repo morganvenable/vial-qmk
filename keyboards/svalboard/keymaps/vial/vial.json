@@ -145,6 +145,11 @@
         "shortName": "PVS\nSpeed-",
         "title": "Decrease PVS maximum scroll velocity.",
         "name": "SV_PVS_SPEED_DOWN"
+      },
+      {
+        "shortName": "Legacy\nScroll",
+        "title": "Toggle legacy (1-detent) scroll output for pre-Vista apps like PACS that ignore the HID Resolution Multiplier.",
+        "name": "SV_LEGACY_SCROLL_TOGGLE"
       }
     ],
     "layouts": {

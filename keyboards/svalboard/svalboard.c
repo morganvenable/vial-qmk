@@ -79,6 +79,12 @@ void read_eeprom_kb(void) {
         global_saved_values.pvs_config = (pvs_config_t)PVS_DEFAULT_CONFIG;
         modified = true;
     }
+    if (global_saved_values.version < 9) {
+        // legacy_scroll defaults off — preserves prior hi-res scroll behaviour.
+        global_saved_values.version = 9;
+        global_saved_values.legacy_scroll = false;
+        modified = true;
+    }
 
     // As we add versions, just append here.
     if (modified) {
