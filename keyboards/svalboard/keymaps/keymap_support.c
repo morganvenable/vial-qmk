@@ -109,6 +109,21 @@ static bool scroll_hold    = false,
 static bool pvs_hold    = false,
             pvs_toggle  = false;
 
+// Per-tick raw-counts threshold for the "pointing trackball moved" PVS
+// termination trigger. Below this, treat as sensor flutter; at-or-above,
+// treat as deliberate motion.
+#define PVS_TERMINATION_POINTING_THRESHOLD 3
+
+static inline void pvs_terminate(pvs_term_action_t action) {
+    if (action == PVS_TERM_PARK) {
+        pvs_park();
+    } else if (action == PVS_TERM_EXIT) {
+        pvs_deactivate();
+        pvs_hold = false;
+        pvs_toggle = false;
+    }
+}
+
 // Legacy-scroll remainder state. When global_saved_values.legacy_scroll is on,
 // hi-res scroll output (h,v) is divided by 120 before leaving the device so that
 // pre-Vista apps (PACS, etc.) that ignore the HID Resolution Multiplier feature
@@ -270,6 +285,18 @@ report_mouse_t pointing_device_task_combined_user(report_mouse_t reportMouse1, r
         pvs_process_deltas(pvs_dx, -pvs_dy, &pvs_h, &pvs_v);  // negate Y for natural scroll direction
         reportMouse1.h = pvs_h;
         reportMouse1.v = pvs_v;
+
+        // Pointing-motion termination trigger. Scroll-side x/y are zero by
+        // construction at this point, so any leftover motion is pointing-side.
+        pvs_term_action_t pterm = global_saved_values.pvs_config.pointing_term_action;
+        if (pterm != PVS_TERM_OFF) {
+            int32_t pmotion = abs(reportMouse1.x) + abs(reportMouse1.y) +
+                              abs(reportMouse2.x) + abs(reportMouse2.y);
+            if (pmotion >= PVS_TERMINATION_POINTING_THRESHOLD) {
+                pvs_terminate(pterm);
+                pvs_active = pvs_is_active();  // refresh; may now be false (EXIT)
+            }
+        }
     }
 
     if (reportMouse1.x == 0 && reportMouse1.y == 0 && reportMouse2.x == 0 && reportMouse2.y == 0) {
@@ -421,6 +448,28 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
 #ifdef CONSOLE_ENABLE
     uprintf("KL: kc: 0x%04X, col: %2u, row: %2u, pressed: %u, time: %5u, int: %u, count: %u\n", keycode, record->event.key.col, record->event.key.row, record->event.pressed, record->event.time, record->tap.interrupted, record->tap.count);
 #endif
+
+    // PVS keypress-termination trigger. Fires on press of any non-PVS-control
+    // key when PVS is active and the configured action is non-OFF. Doesn't
+    // consume the event — just side-effects the PVS state and lets the key
+    // continue to its normal handler (so the radiologist's hotkey still does
+    // what it's supposed to).
+    if (record->event.pressed && pvs_is_active() &&
+        global_saved_values.pvs_config.keypress_term_action != PVS_TERM_OFF) {
+        switch (keycode) {
+            case KC_NO:
+            case KC_TRNS:
+            case SV_PVS_HOLD:
+            case SV_PVS_TOGGLE:
+            case SV_PVS_CYCLE_MODE:
+            case SV_PVS_SPEED_UP:
+            case SV_PVS_SPEED_DOWN:
+                break;  // PVS-control keys exempt
+            default:
+                pvs_terminate(global_saved_values.pvs_config.keypress_term_action);
+                break;
+        }
+    }
 
     if (mouse_mode_enabled && layer_state & (1 << MH_AUTO_BUTTONS_LAYER)) {
         // The keycodes below are all that are forced to drop you out of mouse mode.

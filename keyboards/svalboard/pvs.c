@@ -233,6 +233,19 @@ void pvs_deactivate(void) {
     accum.y = 0;
 }
 
+void pvs_park(void) {
+    // Soft stop: zero velocity now and re-zero the integration origin so
+    // current scroll-ball displacement counts as the new neutral. Stay
+    // active — the next scroll-ball motion away from this new origin will
+    // pull pos out of the dead zone and resume scrolling automatically.
+    if (state == PVS_IDLE) return;
+    state = PVS_DEADZONE;
+    pos.x = 0;
+    pos.y = 0;
+    accum.x = 0;
+    accum.y = 0;
+}
+
 bool pvs_is_active(void) {
     return state != PVS_IDLE;
 }

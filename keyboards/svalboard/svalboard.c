@@ -85,6 +85,16 @@ void read_eeprom_kb(void) {
         global_saved_values.legacy_scroll = false;
         modified = true;
     }
+    if (global_saved_values.version < 10) {
+        // pvs_config bytes 5 and 7 were repurposed as termination action
+        // fields. Existing v9 EEPROM has the old decay_speed=128 / reserved=0
+        // there, which would be interpreted as bogus action values. Reapply
+        // the full default config — also resets any user-tuned PVS settings,
+        // which is acceptable for now (most users haven't tuned).
+        global_saved_values.version = 10;
+        global_saved_values.pvs_config = (pvs_config_t)PVS_DEFAULT_CONFIG;
+        modified = true;
+    }
 
     // As we add versions, just append here.
     if (modified) {
