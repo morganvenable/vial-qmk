@@ -1,4 +1,7 @@
 #include "svalboard.h"
+#ifdef AZOTEQ_IQS5XX_TPS43
+#    include "azoteq.h"
+#endif
 #include "eeconfig.h"
 #include "version.h"
 #include "split_common/transactions.h"
@@ -90,6 +93,19 @@ const uint16_t dpi_choices[] = { 200, 400, 600, 800, 1200, 1600, 2400, 3200, 480
 #define DPI_CHOICES_LENGTH (sizeof(dpi_choices)/sizeof(dpi_choices[0]))
 extern bool is_mac;
 
+#ifdef AZOTEQ_IQS5XX_TPS43
+void send_tps43_status(void) {
+    char                     buf[128];
+    sval_iqs5xx_refresh(3); /* live re-read; also late-runs the flash check */
+    const iqs5xx_identity_t *id = sval_iqs5xx_identity();
+    sprintf(buf, "TPS43 (this half): product %u B000 v%u.%u, settings v%u (firmware carries v%u), flash: %s, i2c: %s\n",
+            id->product_number, id->major, id->minor, id->export_version,
+            sval_iqs5xx_expected_version(), sval_iqs5xx_flash_status_str(),
+            sval_iqs5xx_link_ok() ? "live" : "cached");
+    send_string(buf);
+}
+#endif
+
 void output_keyboard_info(void) {
     char output_buffer[256];
 
@@ -106,6 +122,9 @@ void output_keyboard_info(void) {
 	    mh_timer_choices[global_saved_values.mh_timer_index],
 	    global_saved_values.turbo_scan);
     send_string(output_buffer);
+#ifdef AZOTEQ_IQS5XX_TPS43
+    send_tps43_status();
+#endif
 }
 
 const uint16_t sval_postwait_us[] = {90, 60, 45, 30, 25, 20, 15};

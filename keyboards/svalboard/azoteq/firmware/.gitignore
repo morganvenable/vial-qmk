@@ -1,0 +1,2 @@
+# QMK ignores *.hex globally; this one is a source artifact (Azoteq settings export).
+!*.hex
