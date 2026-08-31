@@ -167,9 +167,118 @@ void pointing_device_driver_init(void) {
     sval_iqs5xx_refresh(10);
 }
 
+#ifdef SVAL_IQS_DIAG
+/* TEST DIAGNOSTICS: tally per-touch statistics and type a summary line ~1 s
+ * after each touch ends. Enabled only with -DSVAL_IQS_DIAG; do not ship. */
+static struct {
+    uint32_t cycles, i2c_ok, i2c_fail;
+    uint32_t f1, hold_cycles, tap_events;
+    uint32_t hold_gaps;  /* hold bit dropped while a finger stayed down */
+    uint32_t fail_gaps;  /* i2c read failed while a finger was down */
+    uint32_t latch_saves; /* failed reads bridged by the button latch */
+    uint32_t palm, reati, ati_err, too_many, rr_missed;
+    uint16_t max_cycle_ms;
+    bool     active, prev_hold, prev_finger;
+    uint32_t last_activity;
+} diag;
+
+static void diag_flush(void) {
+    char buf[176];
+    sprintf(buf, "TPdiag: cyc %lu ok %lu fail %lu | f1 %lu tap %lu hold %lu holdgap %lu failgap %lu latched %lu | palm %lu reati %lu atierr %lu many %lu rrmiss %lu maxct %ums\n",
+            (unsigned long)diag.cycles, (unsigned long)diag.i2c_ok, (unsigned long)diag.i2c_fail,
+            (unsigned long)diag.f1, (unsigned long)diag.tap_events, (unsigned long)diag.hold_cycles,
+            (unsigned long)diag.hold_gaps, (unsigned long)diag.fail_gaps, (unsigned long)diag.latch_saves,
+            (unsigned long)diag.palm, (unsigned long)diag.reati, (unsigned long)diag.ati_err,
+            (unsigned long)diag.too_many, (unsigned long)diag.rr_missed, diag.max_cycle_ms);
+    send_string(buf);
+    memset(&diag, 0, sizeof(diag));
+}
+#endif
+
+/* The IQS5xx only accepts I2C inside its per-cycle comm window, so roughly
+ * half of the polled reads fail mid-touch.  The stock driver returns an
+ * all-zero report on a failed read, which releases any held button for that
+ * cycle -- tap-and-drag flutters.  This replicates the stock report logic but
+ * LATCHES the button state across failed reads: buttons only change on data
+ * actually read from the device.  A 150 ms staleness cutoff clears the latch
+ * so a disconnected pad cannot hold a button down. */
+#define SVAL_IQS_LATCH_TIMEOUT_MS 150
+
 report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
+    static uint8_t  latched_buttons = 0;
+    static uint32_t last_ok         = 0;
 
-    mouse_report = real_device_driver->get_report(mouse_report);
+    report_mouse_t            temp_report     = {0};
+    azoteq_iqs5xx_base_data_t bd              = {0};
+    i2c_status_t              status          = azoteq_iqs5xx_get_base_data(&bd);
+    bool                      ignore_movement = false;
 
-    return mouse_report;
+    if (status == I2C_STATUS_SUCCESS) {
+        bool hold = bd.gesture_events_0.press_and_hold;
+        bool tap  = bd.gesture_events_0.single_tap;
+
+#ifdef SVAL_IQS_DIAG
+        diag.i2c_ok++;
+        bool finger = bd.number_of_fingers > 0;
+        if (finger || hold || tap) {
+            diag.active        = true;
+            diag.last_activity = timer_read32();
+        }
+        if (diag.active) {
+            diag.cycles++;
+            if (bd.number_of_fingers == 1) diag.f1++;
+            if (hold) diag.hold_cycles++;
+            if (tap) diag.tap_events++;
+            if (diag.prev_hold && !hold && finger) diag.hold_gaps++;
+            if (bd.system_info_1.palm_detect) diag.palm++;
+            if (bd.system_info_0.reati_occurred) diag.reati++;
+            if (bd.system_info_0.ati_error) diag.ati_err++;
+            if (bd.system_info_1.too_many_fingers) diag.too_many++;
+            if (bd.system_info_1.rr_missed) diag.rr_missed++;
+            if (bd.previous_cycle_time > diag.max_cycle_ms) diag.max_cycle_ms = bd.previous_cycle_time;
+        }
+        diag.prev_hold   = hold;
+        diag.prev_finger = finger;
+#endif
+
+        /* stock driver behaviour */
+        if (tap || hold) {
+            temp_report.buttons = pointing_device_handle_buttons(temp_report.buttons, true, POINTING_DEVICE_BUTTON1);
+        } else if (bd.gesture_events_1.two_finger_tap) {
+            temp_report.buttons = pointing_device_handle_buttons(temp_report.buttons, true, POINTING_DEVICE_BUTTON2);
+        } else if (bd.gesture_events_1.scroll) {
+            temp_report.h = CONSTRAIN_HID(AZOTEQ_IQS5XX_COMBINE_H_L_BYTES(bd.x.h, bd.x.l));
+            temp_report.v = CONSTRAIN_HID(AZOTEQ_IQS5XX_COMBINE_H_L_BYTES(bd.y.h, bd.y.l));
+        }
+        if (bd.number_of_fingers == 1 && !ignore_movement) {
+            temp_report.x = CONSTRAIN_HID_XY(AZOTEQ_IQS5XX_COMBINE_H_L_BYTES(bd.x.h, bd.x.l));
+            temp_report.y = CONSTRAIN_HID_XY(AZOTEQ_IQS5XX_COMBINE_H_L_BYTES(bd.y.h, bd.y.l));
+        }
+
+        latched_buttons = temp_report.buttons;
+        last_ok         = timer_read32();
+    } else {
+        /* Failed read: keep the last known button state instead of releasing. */
+        if (timer_elapsed32(last_ok) < SVAL_IQS_LATCH_TIMEOUT_MS) {
+            temp_report.buttons = latched_buttons;
+        } else {
+            latched_buttons = 0;
+        }
+#ifdef SVAL_IQS_DIAG
+        diag.i2c_fail++;
+        if (diag.active) {
+            diag.cycles++;
+            if (diag.prev_finger) diag.fail_gaps++;
+            if (temp_report.buttons) diag.latch_saves++;
+        }
+#endif
+    }
+
+#ifdef SVAL_IQS_DIAG
+    if (diag.active && timer_elapsed32(diag.last_activity) > 1000) {
+        diag.active = false;
+        diag_flush();
+    }
+#endif
+    return temp_report;
 }
