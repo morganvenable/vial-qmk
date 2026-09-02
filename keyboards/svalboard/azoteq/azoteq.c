@@ -93,7 +93,6 @@ const iqs5xx_identity_t *sval_iqs5xx_identity(void) {
     return &sval_iqs_id;
 }
 
-/* Flash the bundled image regardless of version. Returns true on success. */
 uint16_t sval_iqs5xx_expected_version(void) {
     return IQS5XX_FW_EXPORT_VERSION;
 }
@@ -102,6 +101,7 @@ const char *sval_iqs5xx_flash_status_str(void) {
     return sval_iqs_flash_tried ? iqs5xx_bl_result_str(sval_iqs_last_flash) : "not needed";
 }
 
+/* Flash the bundled image regardless of version. Returns true on success. */
 bool sval_iqs5xx_flash_image(void) {
     iqs5xx_bl_result_t r = iqs5xx_bl_program(iqs5xx_fw_image, sizeof(iqs5xx_fw_image));
     sval_iqs_flash_tried = true;
@@ -135,6 +135,23 @@ void sval_iqs5xx_refresh(uint8_t attempts) {
         ok = iqs5xx_read_identity(&tmp);
         if (!ok) wait_ms(10);
     }
+
+#if SVAL_IQS_AUTOFLASH
+    /* A module stranded in the bootloader by an interrupted flash (power lost
+     * during the ~4 s programming window) goes silent at the application
+     * address but still answers at the bootloader address.  Nothing else
+     * recovers it, so finish the job and re-read. */
+    if (!ok && !sval_iqs_flash_tried && iqs5xx_bl_present()) {
+        dprintf("IQS5XX: application silent, bootloader responding -- recovering\n");
+        if (sval_iqs5xx_flash_image()) {
+            for (uint8_t i = 0; i < attempts && !ok; i++) {
+                ok = iqs5xx_read_identity(&tmp);
+                if (!ok) wait_ms(10);
+            }
+        }
+    }
+#endif
+
     sval_iqs_link_ok = ok;
     if (!ok) {
         /* keep the last good identity; a miss just means we fell outside the
@@ -208,10 +225,9 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
     static uint8_t  latched_buttons = 0;
     static uint32_t last_ok         = 0;
 
-    report_mouse_t            temp_report     = {0};
-    azoteq_iqs5xx_base_data_t bd              = {0};
-    i2c_status_t              status          = azoteq_iqs5xx_get_base_data(&bd);
-    bool                      ignore_movement = false;
+    report_mouse_t            temp_report = {0};
+    azoteq_iqs5xx_base_data_t bd          = {0};
+    i2c_status_t              status      = azoteq_iqs5xx_get_base_data(&bd);
 
     if (status == I2C_STATUS_SUCCESS) {
         bool hold = bd.gesture_events_0.press_and_hold;
@@ -241,7 +257,10 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
         diag.prev_finger = finger;
 #endif
 
-        /* stock driver behaviour */
+        /* Stock driver behaviour.  The stock swipe (BUTTON3-6) and zoom
+         * (BUTTON7/8) branches are omitted: AZOTEQ_IQS5XX_SWIPE_*_ENABLE and
+         * _ZOOM_ENABLE all default to false and Svalboard does not turn them
+         * on, so the device never sets those gesture bits. */
         if (tap || hold) {
             temp_report.buttons = pointing_device_handle_buttons(temp_report.buttons, true, POINTING_DEVICE_BUTTON1);
         } else if (bd.gesture_events_1.two_finger_tap) {
@@ -250,7 +269,7 @@ report_mouse_t pointing_device_driver_get_report(report_mouse_t mouse_report) {
             temp_report.h = CONSTRAIN_HID(AZOTEQ_IQS5XX_COMBINE_H_L_BYTES(bd.x.h, bd.x.l));
             temp_report.v = CONSTRAIN_HID(AZOTEQ_IQS5XX_COMBINE_H_L_BYTES(bd.y.h, bd.y.l));
         }
-        if (bd.number_of_fingers == 1 && !ignore_movement) {
+        if (bd.number_of_fingers == 1) {
             temp_report.x = CONSTRAIN_HID_XY(AZOTEQ_IQS5XX_COMBINE_H_L_BYTES(bd.x.h, bd.x.l));
             temp_report.y = CONSTRAIN_HID_XY(AZOTEQ_IQS5XX_COMBINE_H_L_BYTES(bd.y.h, bd.y.l));
         }

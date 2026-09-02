@@ -77,6 +77,10 @@ static bool iqs5xx_bl_ver(void) {
     return (((uint16_t)id[0] << 8) | id[1]) == IQS5XX_BL_ID;
 }
 
+bool iqs5xx_bl_present(void) {
+    return iqs5xx_bl_ver();
+}
+
 /* Reset the application and catch the bootloader in its post-reset window. */
 static bool iqs5xx_bl_open(void) {
     for (uint8_t attempt = 0; attempt < IQS5XX_BL_RESET_ATTEMPTS; attempt++) {

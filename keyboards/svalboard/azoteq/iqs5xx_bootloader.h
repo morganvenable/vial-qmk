@@ -40,5 +40,8 @@ typedef struct {
 } iqs5xx_identity_t;
 
 bool               iqs5xx_read_identity(iqs5xx_identity_t *id);
+/* True if the bootloader answers right now, i.e. the module is sitting in it
+ * rather than running the application (an interrupted flash leaves it there). */
+bool               iqs5xx_bl_present(void);
 iqs5xx_bl_result_t iqs5xx_bl_program(const uint8_t *image, uint16_t image_len);
 const char        *iqs5xx_bl_result_str(iqs5xx_bl_result_t r);
