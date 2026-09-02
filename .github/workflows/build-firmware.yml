@@ -47,7 +47,9 @@ jobs:
       run: |
         git config --global --add safe.directory '*'
         # Ensure all requirements got installed and qmk is sure it is set up
-        /usr/bin/python3 -m pip install -r /__w/vial-qmk/vial-qmk/requirements.txt
+        # The qmk_cli image now ships Python 3.13 on a PEP 668 base, which refuses
+        # system-wide pip installs. The container is disposable, so opt out.
+        /usr/bin/python3 -m pip install --break-system-packages -r /__w/vial-qmk/vial-qmk/requirements.txt
         qmk setup -y
         # Run make
         make ${{ inputs.keyboard }}/${{ inputs.side }}:${{ inputs.keymap }}
