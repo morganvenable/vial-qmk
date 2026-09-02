@@ -16,7 +16,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: ghcr.io/qmk/qmk_cli
+    # Pinned: an unpinned (:latest) image is why this workflow broke twice --
+    # once when qmk.math hit Python 3.14 (ast.Num removed), once when the base
+    # moved to a PEP 668 Debian. Bump deliberately, not by surprise.
+    container: ghcr.io/qmk/qmk_cli:1.2.0@sha256:b7d7fa8fb4432b569931de5ad59098cb788f440ed61a62c5126746b71aee0f4a
 
     steps:
     - name: Checkout code - Non PR
@@ -40,14 +43,18 @@ jobs:
     - name: Get tag version
       if: ${{ startsWith(github.ref, 'refs/tags/')}}
       id: get_version
-      run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
     - name: Build firmware
       id: build_firmware
       run: |
         git config --global --add safe.directory '*'
         # Ensure all requirements got installed and qmk is sure it is set up
-        /usr/bin/python3 -m pip install -r /__w/vial-qmk/vial-qmk/requirements.txt
+        # Use the image's qmk virtualenv (/opt/uv/tools/qmk, currently Python 3.14),
+        # NOT /usr/bin/python3 (Debian 3.13). The qmk CLI and every build step run
+        # from that venv, so installing into the system Python put the requirements
+        # where nothing could import them -- and tripped PEP 668 on the way.
+        python3 -m pip install -r /__w/vial-qmk/vial-qmk/requirements.txt
         qmk setup -y
         # Run make
         make ${{ inputs.keyboard }}/${{ inputs.side }}:${{ inputs.keymap }}
