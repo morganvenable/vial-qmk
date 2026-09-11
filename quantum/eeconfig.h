@@ -55,6 +55,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 bool eeconfig_is_enabled(void);
 bool eeconfig_is_disabled(void);
 
+/**
+ * Reports whether the storage layer believes its own contents may be damaged.
+ *
+ * "I could not read this reliably" and "this data is invalid" are different
+ * claims, and the difference matters: reinitialising in response to the first one
+ * destroys a configuration that was probably still recoverable. Callers that are
+ * about to overwrite stored settings with defaults should check this first and
+ * leave the storage alone when it returns true.
+ */
+bool eeconfig_storage_is_suspect(void);
+
 void eeconfig_init(void);
 void eeconfig_init_quantum(void);
 void eeconfig_init_kb(void);

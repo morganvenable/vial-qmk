@@ -135,7 +135,12 @@ void via_init(void) {
     // If the EEPROM has the magic, the data is good.
     // OK to load from EEPROM.
     if (!via_eeprom_is_valid()) {
-        eeconfig_init_via();
+        // A failed magic check means either "this EEPROM holds someone else's
+        // layout" or "this EEPROM did not read back correctly". Only the first one
+        // justifies overwriting the user's keymap with the compiled-in defaults.
+        if (!eeconfig_storage_is_suspect()) {
+            eeconfig_init_via();
+        }
     }
 }
 

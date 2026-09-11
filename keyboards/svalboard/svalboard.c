@@ -1,6 +1,7 @@
 #include "svalboard.h"
 #include "eeconfig.h"
 #include "version.h"
+#include "nvm_health.h"
 #include "split_common/transactions.h"
 #include QMK_KEYBOARD_H
 
@@ -106,6 +107,8 @@ void output_keyboard_info(void) {
 	    mh_timer_choices[global_saved_values.mh_timer_index],
 	    global_saved_values.turbo_scan);
     send_string(output_buffer);
+    sval_nvm_health_string(output_buffer, sizeof(output_buffer));
+    send_string(output_buffer);
 }
 
 const uint16_t sval_postwait_us[] = {90, 60, 45, 30, 25, 20, 15};
@@ -200,6 +203,7 @@ void via_init_kb(void) {
 }
 
 void keyboard_post_init_kb(void) {
+    sval_nvm_health_report();
     read_eeprom_kb();
     set_dpi_from_eeprom();
     keyboard_post_init_user();

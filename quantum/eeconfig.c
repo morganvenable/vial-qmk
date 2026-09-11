@@ -7,6 +7,10 @@
 #include "nvm_eeconfig.h"
 #include "keycode_config.h"
 
+#ifdef WEAR_LEVELING_ENABLE
+#    include "wear_leveling.h"
+#endif // WEAR_LEVELING_ENABLE
+
 #ifdef BACKLIGHT_ENABLE
 #    include "backlight.h"
 #endif // BACKLIGHT_ENABLE
@@ -179,6 +183,15 @@ void eeconfig_enable(void) {
 
 void eeconfig_disable(void) {
     nvm_eeconfig_disable();
+}
+
+bool eeconfig_storage_is_suspect(void) {
+#ifdef WEAR_LEVELING_ENABLE
+    const wear_leveling_report_t *report = wear_leveling_report();
+    return report->integrity == WEAR_LEVELING_INTEGRITY_SUSPECT || report->log_truncated;
+#else
+    return false;
+#endif // WEAR_LEVELING_ENABLE
 }
 
 bool eeconfig_is_enabled(void) {

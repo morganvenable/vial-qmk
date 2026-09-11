@@ -440,7 +440,13 @@ void housekeeping_task(void) {
 void quantum_init(void) {
     /* check signature */
     if (!eeconfig_is_enabled()) {
-        eeconfig_init();
+        /* eeconfig_init() erases the entire backing store before writing defaults.
+           If the storage layer has already told us it could not vouch for what it
+           read, that erase is how a recoverable fault becomes an unrecoverable one,
+           so leave it alone and run from whatever we have. */
+        if (!eeconfig_storage_is_suspect()) {
+            eeconfig_init();
+        }
     }
 
     /* init globals */

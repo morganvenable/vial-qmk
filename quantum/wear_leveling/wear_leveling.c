@@ -163,7 +163,12 @@ static struct __attribute__((__aligned__(BACKING_STORE_WRITE_SIZE))) {
     __attribute__((__aligned__(BACKING_STORE_WRITE_SIZE))) uint8_t cache[(WEAR_LEVELING_LOGICAL_SIZE)];
     uint32_t                                                       write_address;
     bool                                                           unlocked;
+    wear_leveling_report_t                                         report;
 } wear_leveling;
+
+const wear_leveling_report_t *wear_leveling_report(void) {
+    return &wear_leveling.report;
+}
 
 /**
  * Locking helper: status
@@ -207,6 +212,22 @@ static void wear_leveling_clear_cache(void) {
 }
 
 /**
+ * Determines whether the consolidated area is erased rather than corrupted.
+ *
+ * An erased backing store reads back as all-zero, and its checksum will not match.
+ * That is the ordinary first-boot case and carries nothing worth keeping, so it has
+ * to be distinguished from a populated area whose checksum has gone bad.
+ */
+static bool wear_leveling_cache_is_blank(void) {
+    for (uint32_t i = 0; i < (WEAR_LEVELING_LOGICAL_SIZE); ++i) {
+        if (wear_leveling.cache[i] != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * Reads the consolidated data from the backing store into the cache.
  * Does not consider the write log.
  */
@@ -231,13 +252,36 @@ static wear_leveling_status_t wear_leveling_read_consolidated(void) {
 #elif BACKING_STORE_WRITE_SIZE == 8
         backing_store_read((WEAR_LEVELING_LOGICAL_SIZE) + 0, &entry.raw64);
 #endif
-        // If we have a mismatch, clear the cache but do not flag a failure,
-        // which will cater for the completely clean MCU case.
-        if (entry.raw64 == expected) {
+        // A mismatch is not flagged as a failure, which caters for the completely
+        // clean MCU case. It does, however, decide whether the user's configuration
+        // survives this boot, so record how we got here and treat "erased" and
+        // "corrupted" as different situations.
+        wear_leveling.report.checksum_stored   = entry.raw64;
+        wear_leveling.report.checksum_computed = expected;
+        wear_leveling.report.checksum_ok       = (entry.raw64 == expected);
+
+        if (wear_leveling.report.checksum_ok) {
             wl_dprintf("Checksum matches, consolidated data is correct\n");
+            wear_leveling.report.integrity = WEAR_LEVELING_INTEGRITY_OK;
+        } else if (wear_leveling_cache_is_blank()) {
+            wl_dprintf("Checksum mismatch on an erased backing store, clearing cache\n");
+            wear_leveling.report.integrity = WEAR_LEVELING_INTEGRITY_BLANK;
+            wear_leveling_clear_cache();
         } else {
+            wear_leveling.report.integrity = WEAR_LEVELING_INTEGRITY_SUSPECT;
+#if defined(WEAR_LEVELING_ZERO_ON_CORRUPTION)
             wl_dprintf("Checksum mismatch, clearing cache\n");
             wear_leveling_clear_cache();
+#else
+            // Keep the data. The checksum covers the whole logical image, so a
+            // mismatch says "at least one byte is wrong" -- zeroing the cache makes
+            // every byte wrong, and everything above this layer reads an all-zero
+            // image as "uninitialised" and responds by overwriting the backing store
+            // with compiled-in defaults. Preserving is the strictly smaller loss;
+            // callers that care can ask wear_leveling_report() how much to trust it.
+            wl_dprintf("Checksum mismatch, preserving consolidated data\n");
+            wear_leveling.report.contents_preserved = true;
+#endif
         }
     }
 
@@ -596,6 +640,10 @@ static wear_leveling_status_t wear_leveling_playback_log(void) {
                 status          = WEAR_LEVELING_FAILED;
             } break;
         }
+
+        if (!cancel_playback) {
+            wear_leveling.report.log_entries++;
+        }
     }
 
     // We've reached the end of the log, so we're at the new write location
@@ -603,7 +651,8 @@ static wear_leveling_status_t wear_leveling_playback_log(void) {
 
     if (status == WEAR_LEVELING_FAILED) {
         // If we had a failure during readback, assume we're corrupted -- force a consolidation with the data we already have
-        status = wear_leveling_consolidate_force();
+        wear_leveling.report.log_truncated = true;
+        status                             = wear_leveling_consolidate_force();
     } else {
         // Consolidate the cache + write log if required
         status = wear_leveling_consolidate_if_needed();
@@ -617,6 +666,8 @@ static wear_leveling_status_t wear_leveling_playback_log(void) {
  */
 wear_leveling_status_t wear_leveling_init(void) {
     wl_dprintf("Init\n");
+
+    memset(&wear_leveling.report, 0, sizeof(wear_leveling.report));
 
     // Reset the cache
     wear_leveling_clear_cache();
