@@ -1,144 +1,121 @@
-# "My board randomly reset to defaults" — field test build
+# Configuration loss: cause and fix
 
-This branch changes how the firmware reacts when it cannot verify the stored
-configuration, and adds a way to tell whether that ever happened to you. If you
-have had a Svalboard lose its layout for no apparent reason, this is the build to
-run.
+Some Svalboards have come back from an unplug, a KVM switch, or a laptop waking up
+with their layout reset to factory defaults — macros gone, mouse settings reset,
+layers wrong. This describes why, and what changed.
 
-## What causes it
+## Why it happened
 
-Svalboard uses an RP2040 with no dedicated EEPROM chip. `EEPROM_DRIVER` defaults
-to `vendor`, which on RP2040 resolves to QMK's wear-leveling driver backed by the
-QSPI flash (`builddefs/common_features.mk`, `WEAR_LEVELING_DRIVER = rp2040_flash`).
-The top 128 KiB of flash is laid out as:
+Your configuration is stored in one place, with one integrity check covering the
+whole thing. Every so often the keyboard rewrites that storage from scratch. The
+rewrite erases the old copy first and takes roughly a second, during which it
+cannot be interrupted.
 
-```
-[0, 64K)          consolidated image      the settings snapshot
-[64K, 64K+8)      FNV1a-64 checksum       one hash over the whole 64 KiB
-[64K+8, 128K)     write log               appended changes since the last snapshot
-```
+Lose power in that window and the only copy of your configuration is damaged or
+gone. On the next power-up the keyboard cannot verify what it finds, concludes the
+data is garbage, and overwrites it with the defaults compiled into the firmware.
 
-At boot, `wear_leveling_read_consolidated()` hashes the entire 64 KiB and compares
-it against the stored checksum. Because there is a single hash covering everything,
-**one wrong byte anywhere invalidates all of it** — including bytes in regions
-nothing ever reads.
+Two things made this unrecoverable:
 
-Before this change, a mismatch called `wear_leveling_clear_cache()`, which zeroes
-the whole 64 KiB RAM cache. From that point on:
-
-1. Every `eeprom_read_byte()` returns `0x00`.
-2. `via_eeprom_is_valid()` fails, so `via_init()` calls `eeconfig_init_via()` and
-   rewrites the keymap from the firmware's compiled-in defaults.
-3. `eeconfig_is_enabled()` fails too, so `quantum_init()` calls `eeconfig_init()`,
-   which starts with `nvm_eeconfig_erase()` — a **full 128 KiB flash erase**.
-
-Step 3 is what makes this unrecoverable: the original data is physically erased
-during the same boot that mishandled it. The board comes back on the compiled-in
-default layout, which is why it reads as a clean factory reset rather than as
-corruption.
+1. **One copy.** Nothing else held your layout, so once the rewrite was interrupted
+   there was nothing to fall back on.
+2. **One integrity check over everything.** A single bad byte anywhere — including
+   in the ~63 KiB of macro space that is mostly empty — invalidated the whole
+   store, keymap included.
 
 ## What this build changes
 
-An unreadable configuration and an invalid one are now treated as different
-things (`wear_leveling_integrity_t`):
+**A second copy, kept somewhere safer.** The settings that matter — core config,
+the VIA identity bytes, and the full dynamic keymap, about 2 KiB — are mirrored
+into two dedicated flash sectors that sit outside the EEPROM region entirely. They
+are never erased by the operation that rewrites the primary, so an interrupted
+rewrite can no longer take both.
 
-| State | Meaning | Action |
-|---|---|---|
-| `OK` | Checksum matched | Normal boot |
-| `BLANK` | Backing store is erased | Normal first-boot initialization |
-| `SUSPECT` | Checksum failed but data is present | **Keep the data, do not reset** |
+On startup, if the primary store has been lost, the keyboard restores from the
+mirror before anything upstream gets a chance to decide the store is uninitialised
+and reset it. Losing your layout now requires two independent failures.
 
-When the state is `SUSPECT`, the cache is no longer zeroed, and both destructive
-paths are suppressed: `via_init()` skips `eeconfig_init_via()`, and `quantum_init()`
-skips `eeconfig_init()` and its erase. The reasoning is the asymmetry — a bad
-checksum means *at least one* byte is wrong, while zeroing the cache guarantees
-*every* byte is wrong and then invites the layers above to erase the flash.
+This costs **no EEPROM space and no macro space**. It uses 8 KiB of the roughly
+1.8 MiB of program flash that sits unused between the firmware (~78 KiB) and the
+EEPROM region at the top of the chip. The slots are written alternately, so the
+mirror is never the only copy while one of them is mid-erase, and each carries its
+own hash so a half-written slot is simply ignored.
 
-`BLANK` is detected by checking whether the consolidated area is entirely zero, so
-a genuine first boot after an erase still initializes normally.
+The mirror is refreshed only when the live configuration has actually changed and
+the keyboard has been idle for a few seconds — writing it costs an erase plus a
+program with interrupts disabled, so it must not land while someone is typing.
 
-## How to tell whether it happened to you
+**Second: damaged no longer means disposable.** If the integrity check fails but
+there is clearly real data present, the keyboard now keeps it and flags the boot
+rather than erasing. An erased store is still detected as such, so a genuine first
+boot initializes normally.
 
-Press your **status key** (`SV_OUTPUT_STATUS`) with a text editor focused. The
-board types out its status, now with a final `NVM:` line:
+## What you would see
+
+Press your status key with a text editor focused. The readout ends with an `NVM:`
+line:
 
 ```
-NVM: ok | checksum stored 1E9AF793... computed 1E9AF793... | 412 log entries replayed
+NVM: ok | checksum stored ... computed ... | 412 log entries replayed | mirror ok (seq 7)
 ```
 
-That is a healthy board. If you ever see this instead:
+Healthy. `mirror ok` means a good backup is on hand.
 
-```
-NVM: SUSPECT - contents preserved, NOT reset to defaults | checksum stored ... computed ... | 412 log entries replayed
-```
+Two things are worth reporting if you ever see them:
 
-then you have hit the exact condition that used to wipe boards, and this firmware
-caught it and kept your configuration. **Please report that line.**
+- `CONFIG RESTORED FROM MIRROR` — the primary store was lost and the backup put it
+  back. This is the failure happening and being caught.
+- `SUSPECT - contents preserved, NOT reset to defaults` — the integrity check
+  failed and the data was kept rather than erased.
 
-`| WRITE LOG TRUNCATED` appearing anywhere in the line is also worth reporting: it
-means a write-log entry could not be decoded.
+Either line means something we want to know about. The state is recomputed each
+boot and is not stored, so copy it before unplugging.
 
-The state is recomputed each boot and is not stored, so capture it before
-rebooting.
+`no mirror yet` on a freshly flashed board is normal; the mirror is written the
+first time the keyboard is idle.
 
-## If you see SUSPECT, please also dump your flash
+## Limitations
 
-This lets us confirm the mechanism against real hardware rather than a simulated
-fault. Put the affected half into BOOTSEL (unplug, hold the boot button, plug in)
-and run:
+- The macro buffer is not mirrored. It is 97% of the store, and mirroring it would
+  mean constantly rewriting 63 KiB for little gain. Macros are still lost if the
+  primary is destroyed. If that matters, keep a Vial backup.
+- If the corruption lands on the few bytes that identify the store as yours, and
+  the mirror is also unavailable, a reset can still occur.
+- Suppressing the automatic reset removes the only recovery this firmware had. A
+  store that is genuinely scrambled, with no valid mirror, currently needs a
+  computer and `picotool` to clear. A user-facing reset is the obvious next
+  addition.
+- The underlying one-second rewrite window is unchanged. The mirror makes it
+  survivable; it does not make it shorter. Shrinking it means moving the flash
+  layout, which needs its own migration plan.
+
+## If you need to recover or investigate
+
+Dump the affected half in BOOTSEL mode:
 
 ```
 picotool save -r 0x101E0000 0x10200000 dump.bin -f
 ```
 
-Then send `dump.bin`. You can inspect it yourself first:
-
 ```
 python3 util/svalboard_eeprom_recover.py parse dump.bin
 ```
 
-That reports whether the checksum matched, how full the write log was, and whether
-a factory reset is recorded in the log.
+reports whether the checksum matched, how full the write log was, and whether a
+factory reset is recorded. `restore` can repackage a recovered configuration into
+a flashable image.
 
-## Recovering a board that already lost its layout
-
-If your board was wiped by an **older** firmware, the data is almost certainly gone
-— `nvm_eeconfig_erase()` erased it during that boot. A dump is still worth taking
-for diagnosis, but do not expect recovery.
-
-If a board running **this** firmware reports `SUSPECT`, the data was preserved and
-`util/svalboard_eeprom_recover.py` can extract and repackage it:
-
-```
-python3 util/svalboard_eeprom_recover.py restore dump.bin -o restore.bin
-picotool load restore.bin -o 0x101E0000 -f
-```
-
-## Known limitations
-
-- A board in the `SUSPECT` state stays that way until the write log fills and the
-  driver consolidates on its own, which rewrites the checksum and clears the state.
-  Until then, automatic resets stay suppressed — including the one that normally
-  fires after a firmware update, since Vial derives its EEPROM magic from a
-  randomly generated `BUILD_ID` (`util/build_id.py`). That is deliberate for a test
-  build: it keeps the evidence and your layout, and it fails safe.
-- The 128 KiB `WEAR_LEVELING_BACKING_SIZE` in `keyboards/svalboard/config.h` is 16x
-  the QMK default. Consolidation therefore erases 128 KiB and rewrites 64 KiB with
-  interrupts disabled — a window of roughly a second where power loss destroys
-  everything. This build does not change that, because changing the backing size
-  moves the flash region and would itself lose every user's configuration. It is
-  worth revisiting separately.
-- Nothing here addresses the root cause of the corruption; it makes the firmware
-  stop amplifying a single bad byte into total loss.
+Verify the firmware itself against the release artifact with
+`picotool verify <file>.uf2`. A damaged firmware image would not run at all — the
+board would appear as a USB drive named RPI-RP2 rather than a keyboard.
 
 ## Tests
 
 ```
-./util/wear_leveling_test/run.sh                     # host test of the C behaviour
+./util/wear_leveling_test/run.sh                     # host test of the storage behaviour
 python3 util/test_svalboard_eeprom_recover.py        # tests for the recovery tool
 ```
 
-`run.sh` compiles the real `quantum/wear_leveling/wear_leveling.c` against an
-in-memory backing store. Building it with `-DWEAR_LEVELING_ZERO_ON_CORRUPTION`
-restores the old behaviour, and the corruption tests then fail — which is the
-difference this branch makes, in one command.
+`run.sh` compiles the real storage layer against an in-memory backing store.
+Building it with `-DWEAR_LEVELING_ZERO_ON_CORRUPTION` restores the old behaviour
+and the corruption tests then fail.

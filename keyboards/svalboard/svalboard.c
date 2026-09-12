@@ -2,6 +2,7 @@
 #include "eeconfig.h"
 #include "version.h"
 #include "nvm_health.h"
+#include "config_mirror.h"
 #include "split_common/transactions.h"
 #include QMK_KEYBOARD_H
 
@@ -215,7 +216,15 @@ void keyboard_post_init_kb(void) {
 
 bool is_connected = false;
 
+// Runs after eeprom_driver_init() and before via_init()/quantum_init(), which is
+// the only window where a restored configuration still gets to count.
+void keyboard_pre_init_kb(void) {
+    sval_config_mirror_init();
+    keyboard_pre_init_user();
+}
+
 void housekeeping_task_kb(void) {
+    sval_config_mirror_task();
     if (is_keyboard_master()) {
         static uint32_t last_ping = 0;
         if (timer_elapsed(last_ping) > 500) {

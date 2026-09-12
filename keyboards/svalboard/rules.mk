@@ -11,7 +11,7 @@ WS2812_DRIVER   = vendor
 
 CUSTOM_MATRIX = lite
 
-SRC += axis_scale.c matrix.c nvm_health.c $(EXTRA_SRC)
+SRC += axis_scale.c matrix.c nvm_health.c config_mirror.c $(EXTRA_SRC)
 
 SERIAL_DRIVER = vendor
 

@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <stdio.h>
+#include <string.h>
 
 #include "nvm_health.h"
+#include "config_mirror.h"
 #include "print.h"
 
 #ifdef WEAR_LEVELING_ENABLE
@@ -53,6 +55,15 @@ void sval_nvm_health_string(char *buf, size_t len) {
             (unsigned long)stored_hi, (unsigned long)stored_lo,
             (unsigned long)computed_hi, (unsigned long)computed_lo,
             (unsigned long)report->log_entries);
+
+    char *end = buf + strlen(buf) - 1; // overwrite the newline
+    if (sval_config_mirror_restored()) {
+        sprintf(end, " | CONFIG RESTORED FROM MIRROR (seq %lu)\n", (unsigned long)sval_config_mirror_sequence());
+    } else if (sval_config_mirror_present()) {
+        sprintf(end, " | mirror ok (seq %lu)\n", (unsigned long)sval_config_mirror_sequence());
+    } else {
+        sprintf(end, " | no mirror yet\n");
+    }
 #else
     sprintf(buf, "NVM: wear leveling not enabled in this build\n");
 #endif // WEAR_LEVELING_ENABLE
