@@ -363,6 +363,7 @@ void keyboard_setup(void) {
 #ifdef EEPROM_DRIVER
     eeprom_driver_init();
 #endif
+    eeconfig_snapshot_boot_state();
 #ifdef VIAL_ENABLE
     vial_init();
 #endif
@@ -441,10 +442,10 @@ void quantum_init(void) {
     /* check signature */
     if (!eeconfig_is_enabled()) {
         /* eeconfig_init() erases the entire backing store before writing defaults.
-           If the storage layer has already told us it could not vouch for what it
-           read, that erase is how a recoverable fault becomes an unrecoverable one,
-           so leave it alone and run from whatever we have. */
-        if (!eeconfig_storage_is_suspect()) {
+           Skip it only when the storage layer could not vouch for what it read AND
+           the data still belongs to this firmware -- see
+           eeconfig_should_preserve_on_reset(). */
+        if (!eeconfig_should_preserve_on_reset()) {
             eeconfig_init();
         }
     }

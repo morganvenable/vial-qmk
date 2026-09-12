@@ -135,12 +135,13 @@ void via_init(void) {
     // If the EEPROM has the magic, the data is good.
     // OK to load from EEPROM.
     if (!via_eeprom_is_valid()) {
-        // A failed magic check means either "this EEPROM holds someone else's
-        // layout" or "this EEPROM did not read back correctly". Only the first one
-        // justifies overwriting the user's keymap with the compiled-in defaults.
-        if (!eeconfig_storage_is_suspect()) {
-            eeconfig_init_via();
-        }
+        // Reaching here means the magic does not match this firmware, which is
+        // almost always because the user just flashed a different build -- Vial
+        // derives the magic from a random BUILD_ID. That is an explicit request for
+        // a fresh start and must not be suppressed; reflashing is the recovery path
+        // people rely on. Corruption is handled below this layer, by preserving the
+        // store rather than zeroing it, and by the keyboard-level mirror.
+        eeconfig_init_via();
     }
 }
 

@@ -11,6 +11,10 @@
 #    include "wear_leveling.h"
 #endif // WEAR_LEVELING_ENABLE
 
+#ifdef VIA_ENABLE
+#    include "via.h"
+#endif // VIA_ENABLE
+
 #ifdef BACKLIGHT_ENABLE
 #    include "backlight.h"
 #endif // BACKLIGHT_ENABLE
@@ -192,6 +196,25 @@ bool eeconfig_storage_is_suspect(void) {
 #else
     return false;
 #endif // WEAR_LEVELING_ENABLE
+}
+
+// Snapshot of whether the stored data claimed to belong to this firmware at
+// power-on, taken before anything has had a chance to rewrite the magic.
+static bool boot_data_was_ours = true;
+
+void eeconfig_snapshot_boot_state(void) {
+#ifdef VIA_ENABLE
+    boot_data_was_ours = via_eeprom_is_valid();
+#endif // VIA_ENABLE
+}
+
+bool eeconfig_should_preserve_on_reset(void) {
+    if (!eeconfig_storage_is_suspect()) {
+        return false;
+    }
+    // Different firmware at power-on => the user reflashed, which is an explicit
+    // request for a fresh start. Let the reset through.
+    return boot_data_was_ours;
 }
 
 bool eeconfig_is_enabled(void) {

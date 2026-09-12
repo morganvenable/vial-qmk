@@ -81,10 +81,12 @@ first time the keyboard is idle.
   primary is destroyed. If that matters, keep a Vial backup.
 - If the corruption lands on the few bytes that identify the store as yours, and
   the mirror is also unavailable, a reset can still occur.
-- Suppressing the automatic reset removes the only recovery this firmware had. A
-  store that is genuinely scrambled, with no valid mirror, currently needs a
-  computer and `picotool` to clear. A user-facing reset is the obvious next
-  addition.
+- A store that is genuinely scrambled with no valid mirror is cleared the way it
+  always was: **reflash the firmware**. Flashing any freshly built image gives it a
+  new identity, the keyboard sees that the stored data belongs to a different build,
+  and it resets itself. The protection described above deliberately steps aside when
+  that happens, because reflashing is an explicit request for a fresh start. A
+  reset key would still be a convenience, but it is not the only way out.
 - The underlying one-second rewrite window is unchanged. The mirror makes it
   survivable; it does not make it shorter. Shrinking it means moving the flash
   layout, which needs its own migration plan.

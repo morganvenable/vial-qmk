@@ -66,6 +66,27 @@ bool eeconfig_is_disabled(void);
  */
 bool eeconfig_storage_is_suspect(void);
 
+/**
+ * Whether an automatic reset-to-defaults should be held back this boot.
+ *
+ * True only when the storage layer could not verify what it read AND the data
+ * still identifies as belonging to this firmware build. A magic mismatch means the
+ * user flashed a different build, and reflashing is the recovery path people
+ * expect to work -- suppressing the reset there would leave a scrambled store with
+ * no way out short of a debug tool.
+ */
+bool eeconfig_should_preserve_on_reset(void);
+
+/**
+ * Latches the storage state as it was found at power-on.
+ *
+ * Must be called once, right after the EEPROM driver is initialised and before
+ * via_init() runs. via_init() stamps a fresh VIA magic as a side effect of
+ * resetting, so by the time quantum_init() looks, the evidence that the user had
+ * flashed different firmware is already gone.
+ */
+void eeconfig_snapshot_boot_state(void);
+
 void eeconfig_init(void);
 void eeconfig_init_quantum(void);
 void eeconfig_init_kb(void);
